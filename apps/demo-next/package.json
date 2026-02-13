@@ -1,0 +1,19 @@
+{
+  "name": "demo-next",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "pnpm -s tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@act-sdk/core": "workspace:*",
+    "@act-sdk/react": "workspace:*",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  }
+}
