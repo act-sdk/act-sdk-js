@@ -1,7 +1,5 @@
 import type { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {
-  transpilePackages: ['@act-sdk/core', '@act-sdk/react'],
-};
+const nextConfig: NextConfig = {};
 
 export default nextConfig;

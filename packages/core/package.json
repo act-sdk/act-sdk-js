@@ -1,25 +1,29 @@
 {
-  "name": "@act-sdk/core",
-  "version": "0.0.0",
+  "name": "@act/core",
+  "version": "0.1.0",
   "private": false,
   "type": "module",
-  "main": "./dist/index.cjs",
+  "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "dev": "tsup src/index.ts --watch --dts --format esm,cjs",
-    "build": "tsup src/index.ts --dts --format esm,cjs --clean",
-    "lint": "eslint src --ext .ts",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "typecheck": "pnpm -s tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "zod": "^3.22.0"
+  },
+  "peerDependencies": {
+    "zod": "^3"
   }
 }

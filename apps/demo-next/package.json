@@ -1,19 +1,24 @@
 {
   "name": "demo-next",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . --ext .ts,.tsx",
-    "typecheck": "pnpm -s tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@act-sdk/core": "workspace:*",
-    "@act-sdk/react": "workspace:*",
-    "next": "latest",
-    "react": "latest",
-    "react-dom": "latest"
+    "@act/core": "workspace:*",
+    "@act/react": "workspace:*",
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
   }
 }

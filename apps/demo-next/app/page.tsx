@@ -1,14 +1,19 @@
-import { ACT_SDK_CORE_VERSION } from '@act-sdk/core';
-import { getActSdkVersions } from '@act-sdk/react';
+'use client';
+
+import { createTask } from '@act/core';
+import { useActId } from '@act/react';
 
 export default function HomePage() {
-  const versions = getActSdkVersions();
+  const viewId = useActId('demo');
+  const task = createTask('Ship v1');
 
   return (
     <main>
-      <h1>Act SDK Demo</h1>
-      <p>Core package version: {ACT_SDK_CORE_VERSION}</p>
-      <p>React package version: {versions.react}</p>
+      <h1>ACT SDK Demo</h1>
+      <p>View id: {viewId}</p>
+      <p>
+        Sample task: {task.title} ({task.id})
+      </p>
     </main>
   );
 }

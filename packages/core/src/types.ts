@@ -1,29 +1,32 @@
-export interface ActSDKConfig {
-  apiKey: string;
-  projectId: string;
-  allowedRoutes?: string[];
-  restrictedRoutes?: string[];
-  /**
-   * Appended to the default internal system instructions.
-   * Use this to extend behavior without replacing base instructions.
-   */
-  systemPrompt?: string;
+import type { z, ZodType } from 'zod';
+
+export interface ActionMeta<TInput extends ZodType = ZodType> {
+  id: string;
+  description: string;
+  input?: TInput;
 }
 
-export interface ResolvedActSDKConfig extends ActSDKConfig {
-  endpoint: string;
+// The handler the developer writes
+export type ActionHandler<TInput extends ZodType = ZodType> = (
+  args: z.infer<TInput>,
+) => Promise<void> | void;
+
+// What gets stored internally in the registry
+export interface RegistryEntry {
+  meta: ActionMeta;
+  handler: ActionHandler;
 }
 
-export interface Route {
-  path: string;
-  description?: string;
-  keywords?: string[];
-  contextRequired?: string[];
+// What gets sent to the cloud — no handler, no sensitive info
+export interface ActionManifest {
+  id: string;
+  description: string;
+  hasInput: boolean;
 }
 
-export interface NavigationResult {
-  action: 'navigate' | 'message';
-  route?: string;
-  message?: string;
-  explanation?: string;
-}
+// The wrapped function returned to the developer
+export type WrappedAction<TInput extends ZodType = ZodType> = ((
+  args: z.infer<TInput>,
+) => Promise<void>) & {
+  _actMeta: ActionMeta<TInput>;
+};

@@ -1,10 +1,5 @@
-import { ACT_SDK_CORE_VERSION } from '@act-sdk/core';
-
-export const ACT_SDK_REACT_VERSION = '0.0.0';
-
-export function getActSdkVersions() {
-  return {
-    core: ACT_SDK_CORE_VERSION,
-    react: ACT_SDK_REACT_VERSION,
-  };
-}
+export { ActSdkProvider, ActProvider } from './provider';
+export { ActSdkContext, ActContext, useActSdkContext, useActContext } from './context';
+export { useAct } from './hooks/use-act';
+export type { ActSdkProviderProps, ActProviderProps } from './provider';
+export type { ActSdkContextValue, ActContextValue } from './types';
