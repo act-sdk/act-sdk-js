@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
-import { DEFAULT_ACT_API_ENDPOINT } from '@act/core';
-import type { ActSdkConfig, ActSdkInstance } from '@act/core';
+import { DEFAULT_ACT_SDK_API_ENDPOINT } from '@act-sdk/core';
+import type { ActSdkConfig, ActSdkInstance } from '@act-sdk/core';
 import { ActSdkContext } from './context';
 
 export interface ActSdkProviderProps {
@@ -15,18 +15,16 @@ export interface ActSdkProviderProps {
 
 export type ActProviderProps = ActSdkProviderProps;
 
-export function ActSdkProvider({
-  act,
-  config,
-  endpoint,
-  children,
-}: ActSdkProviderProps) {
+export function ActSdkProvider({ act, config, endpoint, children }: ActSdkProviderProps) {
   const resolvedConfig: ActSdkConfig = {
     ...config,
-    endpoint: config.endpoint ?? endpoint ?? DEFAULT_ACT_API_ENDPOINT,
+    endpoint: config.endpoint ?? endpoint ?? DEFAULT_ACT_SDK_API_ENDPOINT,
   };
-
-  return <ActSdkContext.Provider value={{ act, config: resolvedConfig }}>{children}</ActSdkContext.Provider>;
+  return (
+    <ActSdkContext.Provider value={{ act, config: resolvedConfig }}>
+      {children}
+    </ActSdkContext.Provider>
+  );
 }
 
 export const ActProvider = ActSdkProvider;

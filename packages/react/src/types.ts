@@ -1,5 +1,5 @@
-import type { ActSdkConfig } from '@act/core';
-import type { ActSdkInstance } from '@act/core';
+import type { ActSdkConfig } from '@act-sdk/core';
+import type { ActSdkInstance } from '@act-sdk/core';
 
 export interface ActSdkContextValue {
   act: ActSdkInstance;

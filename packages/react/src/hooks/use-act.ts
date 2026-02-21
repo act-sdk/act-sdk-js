@@ -1,4 +1,4 @@
-import { DEFAULT_ACT_API_ENDPOINT } from '@act/core';
+import { DEFAULT_ACT_SDK_API_ENDPOINT } from '@act-sdk/core';
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
 import { useCallback } from 'react';
 import { useActSdkContext } from '../context';
@@ -10,21 +10,21 @@ export function useAct() {
 
   const { messages, status, error, sendMessage, setMessages, addToolOutput } = useChat({
     transport: new DefaultChatTransport({
-      api: `${config.endpoint ?? DEFAULT_ACT_API_ENDPOINT}/api/chat/actions`,
+      api: `${config.endpoint ?? DEFAULT_ACT_SDK_API_ENDPOINT}/api/chat/actions`,
       headers: {
         'x-api-key': config.apiKey,
         'x-project-id': config.projectId,
       },
-      body: {
-        actions: config.actions,
+      body: () => ({
+        actions: act.listActions(),
         projectDescription: config.description,
-      },
+      }),
     }),
 
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
 
     onToolCall: async ({ toolCall }) => {
-      if (toolCall.toolName !== 'execute_action') return;
+      if (toolCall.toolName !== 'executeAction') return;
 
       const { actionId, payload } = toolCall.input as {
         actionId: string;
@@ -43,7 +43,7 @@ export function useAct() {
         };
 
         addToolOutput({
-          tool: 'execute_action',
+          tool: 'executeAction',
           toolCallId: toolCall.toolCallId,
           output,
         });
@@ -57,7 +57,7 @@ export function useAct() {
         };
 
         addToolOutput({
-          tool: 'execute_action',
+          tool: 'executeAction',
           toolCallId: toolCall.toolCallId,
           output,
         });
@@ -88,6 +88,6 @@ export function useAct() {
     send,
     run,
     clearMessages,
-    actions: config.actions,
+    actions: act.listActions(),
   };
 }

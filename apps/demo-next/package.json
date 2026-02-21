@@ -9,16 +9,20 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@act/core": "workspace:*",
-    "@act/react": "workspace:*",
+    "@act-sdk/core": "workspace:*",
+    "@act-sdk/react": "workspace:*",
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
     "typescript": "^5"
   }
 }

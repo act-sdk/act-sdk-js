@@ -1,5 +1,5 @@
 {
-  "name": "@act/react",
+  "name": "@act-sdk/react",
   "version": "0.1.0",
   "private": false,
   "type": "module",
@@ -21,7 +21,7 @@
     "typecheck": "pnpm -s tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@act/core": "workspace:*",
+    "@act-sdk/core": "workspace:*",
     "@ai-sdk/react": "^3.0.94",
     "ai": "^6.0.92",
     "zod": "^3.22.0"

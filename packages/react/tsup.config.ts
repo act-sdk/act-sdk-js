@@ -6,5 +6,5 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
-  external: ['react', '@act/core'],
+  external: ['react', '@act-sdk/core'],
 });

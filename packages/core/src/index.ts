@@ -1,5 +1,5 @@
 export { createAct } from './act';
-export { DEFAULT_ACT_API_ENDPOINT, defineConfig } from './config';
+export { DEFAULT_ACT_SDK_API_ENDPOINT, defineConfig } from './config';
 export type { ActSdkInstance } from './act';
 export type {
   ActionMeta,
@@ -8,4 +8,4 @@ export type {
   RegistryEntry,
   WrappedAction,
 } from './types';
-export type { ActSdkConfig, ActionConfig, ResolvedActSdkConfig } from './config';
+export type { ActSdkConfig, ResolvedActSdkConfig } from './config';

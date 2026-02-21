@@ -44,7 +44,7 @@ function toPascal(str: string) {
 function generateChatbot() {
   return `"use client"
 
-import { useAct } from "@act/react"
+import { useAct } from "@act-sdk/react"
 import { useState } from "react"
 
 export function ActChatbot() {
@@ -168,7 +168,7 @@ function ActionCard({ state, children }: { state: CardState; children: React.Rea
 function generateCommandBar() {
   return `"use client"
 
-import { useAct } from "@act/react"
+import { useAct } from "@act-sdk/react"
 import { useEffect, useState } from "react"
 import {
   CommandDialog,
