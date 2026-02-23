@@ -4,7 +4,6 @@ export interface ActSdkConfig {
   apiKey: string;
   projectId: string;
   description: string;
-  restrictedRoutes?: string[];
   endpoint?: string;
 }
 

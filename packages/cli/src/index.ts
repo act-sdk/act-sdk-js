@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { init } from './commands/init';
 import { add } from './commands/add';
-import { generate } from './commands/generate';
+import { sync } from './commands/sync';
 
 const program = new Command();
 
@@ -16,9 +16,10 @@ program
   .action(add);
 
 program
-  .command('generate')
-  .description('Generate action definitions from wrapped functions')
-  .option('-o, --output <path>', 'Output path for config', 'act-sdk.config.ts')
-  .action(generate);
+  .command('sync')
+  .description('Sync action definitions to the cloud')
+  .option('-c, --config <path>', 'Path to config file', 'act-sdk.config.ts')
+  .option('-p, --project <path>', 'Project path', process.cwd())
+  .action(sync);
 
 program.parse();

@@ -7,5 +7,4 @@ export const actSdkConfig = defineConfig({
   projectId: 'demo-project-id',
   description: 'Demo Next.js app exposing AI-callable fixed add numbers action',
   endpoint: 'http://localhost:3000',
-  restrictedRoutes: [],
 });

@@ -36,18 +36,14 @@ export async function init() {
 
   const cwd = process.cwd();
 
-  // 1. Write act-sdk.config.ts
   await fs.outputFile(path.join(cwd, 'act-sdk.config.ts'), generateConfig(answers));
 
-  // 2. Write example actions file
   await fs.outputFile(path.join(cwd, answers.actionsPath), generateActionsFile());
 
-  // 3. Write .env.local entry
   const envPath = path.join(cwd, '.env.local');
   const envEntry = `\nNEXT_PUBLIC_ACT_API_KEY=your_api_key_here\n`;
   await fs.appendFile(envPath, envEntry);
 
-  // 4. Write the provider wrapper based on framework
   if (answers.framework === 'next-app') {
     await fs.outputFile(path.join(cwd, 'app/act-provider.tsx'), generateProvider());
   }

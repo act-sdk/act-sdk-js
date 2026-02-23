@@ -15,17 +15,12 @@ export function useAct() {
         'x-api-key': config.apiKey,
         'x-project-id': config.projectId,
       },
-      body: () => ({
-        actions: act.listActions(),
-        projectDescription: config.description,
-      }),
     }),
 
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
     onToolCall: async ({ toolCall }) => {
       if (toolCall.dynamic) return;
 
-      // toolCall.toolName IS the actionId now — each action is its own tool
       const actionId = toolCall.toolName;
       const payload = toolCall.input ?? {};
 
