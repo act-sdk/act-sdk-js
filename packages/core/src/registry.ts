@@ -1,3 +1,4 @@
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { RegistryEntry, ActionManifest } from './types';
 
 export class ActionRegistry {
@@ -23,6 +24,9 @@ export class ActionRegistry {
       id: meta.id,
       description: meta.description,
       hasInput: !!meta.input,
+      inputSchema: meta.input
+        ? (zodToJsonSchema(meta.input, { target: 'openApi3' }) as Record<string, unknown>)
+        : undefined,
     }));
   }
 

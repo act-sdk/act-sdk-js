@@ -127,6 +127,9 @@ importers:
       zod:
         specifier: ^3.22.0
         version: 3.25.76
+      zod-to-json-schema:
+        specifier: ^3.25.1
+        version: 3.25.1(zod@3.25.76)
 
   packages/react:
     dependencies:

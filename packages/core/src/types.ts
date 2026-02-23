@@ -22,6 +22,7 @@ export interface ActionManifest {
   id: string;
   description: string;
   hasInput: boolean;
+  inputSchema?: Record<string, unknown>;
 }
 
 // The wrapped function returned to the developer

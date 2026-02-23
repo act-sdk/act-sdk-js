@@ -22,44 +22,38 @@ export function useAct() {
     }),
 
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
-
     onToolCall: async ({ toolCall }) => {
-      if (toolCall.toolName !== 'executeAction') return;
+      if (toolCall.dynamic) return;
 
-      const { actionId, payload } = toolCall.input as {
-        actionId: string;
-        payload?: unknown;
-      };
+      // toolCall.toolName IS the actionId now — each action is its own tool
+      const actionId = toolCall.toolName;
+      const payload = toolCall.input ?? {};
 
       try {
         await act.run(actionId, payload);
 
-        const output: ActionToolOutput = {
-          actionId,
-          status: 'success',
-          message: `Action "${actionId}" completed successfully`,
-          payload: payload ?? null,
-          timestamp: new Date().toISOString(),
-        };
-
         addToolOutput({
-          tool: 'executeAction',
+          tool: actionId,
           toolCallId: toolCall.toolCallId,
-          output,
+          output: {
+            actionId,
+            status: 'success',
+            message: `Action "${actionId}" completed successfully`,
+            payload,
+            timestamp: new Date().toISOString(),
+          } satisfies ActionToolOutput,
         });
       } catch (err) {
-        const output: ActionToolOutput = {
-          actionId,
-          status: 'error',
-          message: err instanceof Error ? err.message : 'Unknown error',
-          payload: payload ?? null,
-          timestamp: new Date().toISOString(),
-        };
-
         addToolOutput({
-          tool: 'executeAction',
+          tool: actionId,
           toolCallId: toolCall.toolCallId,
-          output,
+          output: {
+            actionId,
+            status: 'error',
+            message: err instanceof Error ? err.message : 'Unknown error',
+            payload,
+            timestamp: new Date().toISOString(),
+          } satisfies ActionToolOutput,
         });
       }
     },

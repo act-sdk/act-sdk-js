@@ -21,7 +21,8 @@
     "typecheck": "pnpm -s tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "zod": "^3.22.0"
+    "zod": "^3.22.0",
+    "zod-to-json-schema": "^3.25.1"
   },
   "peerDependencies": {
     "zod": "^3"
