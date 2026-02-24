@@ -54,7 +54,7 @@ export async function init() {
   console.log(`  1. Add your API key to ${chalk.cyan('.env.local')}`);
   console.log(`  2. Wrap your actions in ${chalk.cyan(answers.actionsPath)}`);
   console.log(`  3. Run ${chalk.cyan('npx act-sdk generate')} to generate config`);
-  console.log(`  4. Run ${chalk.cyan('npx act-sdk add chatbot')} to add the UI\n`);
+  console.log(`  4. Run ${chalk.cyan('npx act-sdk add agent')} to add the UI\n`);
 }
 
 function generateConfig(answers: { projectId: string; actionsPath: string }) {

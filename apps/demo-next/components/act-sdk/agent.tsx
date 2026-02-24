@@ -1,53 +1,8 @@
-import chalk from 'chalk';
-import ora from 'ora';
-import fs from 'fs-extra';
-import path from 'path';
-import prompts from 'prompts';
+'use client';
 
-const COMPONENTS: Record<string, () => string> = {
-  agent: generateAgent,
-};
-
-export async function add(component: string) {
-  if (!COMPONENTS[component]) {
-    console.log(chalk.red(`\n  Unknown component: ${component}`));
-    console.log(`  Available: ${Object.keys(COMPONENTS).join(', ')}\n`);
-    return;
-  }
-
-  const { outputPath } = await prompts({
-    type: 'text',
-    name: 'outputPath',
-    message: 'Where to put the component?',
-    initial: `components/act-sdk/${component}.tsx`,
-  });
-
-  if (!outputPath) return;
-
-  const spinner = ora(`Adding ${component}...`).start();
-
-  await fs.outputFile(path.join(process.cwd(), outputPath), COMPONENTS[component]!());
-
-  spinner.succeed(`Added ${chalk.cyan(component)} to ${chalk.cyan(outputPath)}`);
-  console.log(chalk.dim(`\n  Import it with:`));
-  console.log(
-    `  import { Act${toPascal(component)} } from "@/${outputPath.replace('.tsx', '')}"\n`,
-  );
-}
-
-function toPascal(str: string) {
-  return str
-    .split('-')
-    .map((s) => s[0]!.toUpperCase() + s.slice(1))
-    .join('');
-}
-
-function generateAgent() {
-  return `"use client"
-
-import { useAct } from "@act-sdk/react"
-import { useState, useRef, useEffect } from "react"
-import type { CSSProperties, ReactNode } from "react"
+import { useAct } from '@act-sdk/react';
+import { useState, useRef, useEffect } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import {
   Sparkles,
   X,
@@ -59,63 +14,63 @@ import {
   CheckCircle2,
   AlertTriangle,
   Loader2,
-} from "lucide-react"
+} from 'lucide-react';
 
 type GenericPart = {
-  type: string
-  text?: string
-  state?: string
-  toolCallId?: string
-  input?: unknown
-  output?: unknown
-  errorText?: string
-}
+  type: string;
+  text?: string;
+  state?: string;
+  toolCallId?: string;
+  input?: unknown;
+  output?: unknown;
+  errorText?: string;
+};
 
 function getTextParts(parts: GenericPart[] = []) {
-  return parts.filter((part) => part.type === "text" && typeof part.text === "string")
+  return parts.filter((part) => part.type === 'text' && typeof part.text === 'string');
 }
 
 function getToolParts(parts: GenericPart[] = []) {
-  return parts.filter((part) => part.type.startsWith("tool-"))
+  return parts.filter((part) => part.type.startsWith('tool-'));
 }
 
 function normalizeUnknown(value: unknown): unknown {
-  if (typeof value !== "string") return value
+  if (typeof value !== 'string') return value;
   try {
-    return JSON.parse(value)
+    return JSON.parse(value);
   } catch {
-    return value
+    return value;
   }
 }
 
 function formatJson(value: unknown) {
-  if (value === undefined || value === null) return null
-  const parsed = normalizeUnknown(value)
-  if (typeof parsed === "string") return parsed
+  if (value === undefined || value === null) return null;
+  const parsed = normalizeUnknown(value);
+  if (typeof parsed === 'string') return parsed;
   try {
-    return JSON.stringify(parsed, null, 2)
+    return JSON.stringify(parsed, null, 2);
   } catch {
-    return String(parsed)
+    return String(parsed);
   }
 }
 
 function ToolStateBadge({ state }: { state?: string }) {
-  if (state === "output-available") {
+  if (state === 'output-available') {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-emerald-300">
         <CheckCircle2 className="h-3 w-3" />
         Success
       </span>
-    )
+    );
   }
 
-  if (state === "output-error") {
+  if (state === 'output-error') {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-rose-400/30 bg-rose-400/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-rose-300">
         <AlertTriangle className="h-3 w-3" />
         Error
       </span>
-    )
+    );
   }
 
   return (
@@ -123,13 +78,15 @@ function ToolStateBadge({ state }: { state?: string }) {
       <Loader2 className="h-3 w-3 animate-spin" />
       Running
     </span>
-  )
+  );
 }
 
 function ToolCallCard({ part }: { part: GenericPart }) {
-  const [open, setOpen] = useState(part.state === "output-available" || part.state === "output-error")
-  const input = formatJson(part.input)
-  const output = formatJson(part.output)
+  const [open, setOpen] = useState(
+    part.state === 'output-available' || part.state === 'output-error',
+  );
+  const input = formatJson(part.input);
+  const output = formatJson(part.output);
 
   return (
     <div className="rounded-xl border border-(--copilot-border) bg-black/20">
@@ -163,7 +120,7 @@ function ToolCallCard({ part }: { part: GenericPart }) {
             </ToolJsonBlock>
           )}
 
-          {part.state === "output-error" && part.errorText && (
+          {part.state === 'output-error' && part.errorText && (
             <div className="rounded-lg border border-rose-400/20 bg-rose-500/10 px-2.5 py-2 text-xs text-rose-200">
               {part.errorText}
             </div>
@@ -177,7 +134,7 @@ function ToolCallCard({ part }: { part: GenericPart }) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function ToolJsonBlock({
@@ -185,52 +142,52 @@ function ToolJsonBlock({
   tone,
   children,
 }: {
-  title: string
-  tone: string
-  children: ReactNode
+  title: string;
+  tone: string;
+  children: ReactNode;
 }) {
   return (
     <div className="rounded-lg border border-(--copilot-border) bg-(--copilot-bubble)/70 p-2">
-      <p className={["mb-1 text-[10px] uppercase tracking-wide", tone].join(" ")}>{title}</p>
+      <p className={['mb-1 text-[10px] uppercase tracking-wide', tone].join(' ')}>{title}</p>
       <pre className="overflow-x-auto whitespace-pre-wrap break-all text-[11px] leading-relaxed text-(--copilot-fg)/90">
         {children}
       </pre>
     </div>
-  )
+  );
 }
 
 export function ActAgent() {
-  const { messages, send, clearMessages, status } = useAct()
-  const [open, setOpen] = useState(false)
-  const [input, setInput] = useState("")
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const loading = status === "submitted" || status === "streaming"
+  const { messages, send, clearMessages, status } = useAct();
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState('');
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const loading = status === 'submitted' || status === 'streaming';
 
   useEffect(() => {
     if (open) {
-      setTimeout(() => inputRef.current?.focus(), 150)
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+      setTimeout(() => inputRef.current?.focus(), 150);
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [open, messages, status])
+  }, [open, messages, status]);
 
   function handleSend(text?: string) {
-    const value = (text ?? input).trim()
-    if (!value || loading) return
-    send(value)
-    setInput("")
+    const value = (text ?? input).trim();
+    if (!value || loading) return;
+    send(value);
+    setInput('');
   }
 
   const style = {
-    "--copilot-bg": "#09090b",
-    "--copilot-fg": "#fafafa",
-    "--copilot-border": "#27272a",
-    "--copilot-bubble": "#18181b",
-    "--copilot-hover": "#27272a",
-    "--copilot-muted": "#a1a1aa",
-    "--copilot-active": "#22c55e",
-    "--copilot-input-bg": "#18181b",
-  } as CSSProperties
+    '--copilot-bg': '#09090b',
+    '--copilot-fg': '#fafafa',
+    '--copilot-border': '#27272a',
+    '--copilot-bubble': '#18181b',
+    '--copilot-hover': '#27272a',
+    '--copilot-muted': '#a1a1aa',
+    '--copilot-active': '#22c55e',
+    '--copilot-input-bg': '#18181b',
+  } as CSSProperties;
 
   return (
     <div style={style}>
@@ -243,15 +200,17 @@ export function ActAgent() {
         aria-label="ACT-SDK Agent"
         aria-modal="true"
         className={[
-          "fixed bottom-24 right-6 z-50 flex flex-col",
-          "w-[340px] sm:w-[380px]",
-          "h-[min(80vh,46rem)]",
-          "bg-(--copilot-bg) text-(--copilot-fg)",
-          "border border-(--copilot-border)",
-          "rounded-2xl shadow-2xl overflow-hidden",
-          "transition-all duration-300 ease-out origin-bottom-right",
-          open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none",
-        ].join(" ")}
+          'fixed bottom-24 right-6 z-50 flex flex-col',
+          'w-[340px] sm:w-[380px]',
+          'h-[min(80vh,46rem)]',
+          'bg-(--copilot-bg) text-(--copilot-fg)',
+          'border border-(--copilot-border)',
+          'rounded-2xl shadow-2xl overflow-hidden',
+          'transition-all duration-300 ease-out origin-bottom-right',
+          open
+            ? 'opacity-100 scale-100 pointer-events-auto'
+            : 'opacity-0 scale-95 pointer-events-none',
+        ].join(' ')}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-(--copilot-border)">
           <div className="flex items-center gap-2">
@@ -284,23 +243,27 @@ export function ActAgent() {
 
         <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3 scroll-smooth">
           {messages.map((m) => {
-            const textParts = getTextParts(m.parts as GenericPart[])
-            const toolParts = getToolParts(m.parts as GenericPart[])
+            const textParts = getTextParts(m.parts as GenericPart[]);
+            const toolParts = getToolParts(m.parts as GenericPart[]);
 
             return (
               <div key={m.id} className="space-y-2">
                 {textParts.length > 0 && (
-                  <div className={["flex", m.role === "user" ? "justify-end" : "justify-start"].join(" ")}>
+                  <div
+                    className={['flex', m.role === 'user' ? 'justify-end' : 'justify-start'].join(
+                      ' ',
+                    )}
+                  >
                     <div
                       className={[
-                        "max-w-[85%] px-3 py-2 rounded-xl text-sm leading-relaxed whitespace-pre-wrap",
-                        m.role === "user"
-                          ? "bg-(--copilot-fg) text-(--copilot-bg) rounded-br-sm"
-                          : "bg-(--copilot-bubble) text-(--copilot-fg) rounded-bl-sm",
-                      ].join(" ")}
+                        'max-w-[85%] px-3 py-2 rounded-xl text-sm leading-relaxed whitespace-pre-wrap',
+                        m.role === 'user'
+                          ? 'bg-(--copilot-fg) text-(--copilot-bg) rounded-br-sm'
+                          : 'bg-(--copilot-bubble) text-(--copilot-fg) rounded-bl-sm',
+                      ].join(' ')}
                     >
                       {textParts.map((part, i) => (
-                        <p key={i} className={i > 0 ? "mt-2" : ""}>
+                        <p key={i} className={i > 0 ? 'mt-2' : ''}>
                           {part.text}
                         </p>
                       ))}
@@ -309,16 +272,20 @@ export function ActAgent() {
                 )}
 
                 {toolParts.length > 0 && (
-                  <div className={["flex", m.role === "user" ? "justify-end" : "justify-start"].join(" ")}>
+                  <div
+                    className={['flex', m.role === 'user' ? 'justify-end' : 'justify-start'].join(
+                      ' ',
+                    )}
+                  >
                     <div className="w-full max-w-[90%] space-y-2">
                       {toolParts.map((part, i) => (
-                        <ToolCallCard key={part.toolCallId ?? part.type + "-" + i} part={part} />
+                        <ToolCallCard key={part.toolCallId ?? part.type + '-' + i} part={part} />
                       ))}
                     </div>
                   </div>
                 )}
               </div>
-            )
+            );
           })}
 
           {loading && (
@@ -329,7 +296,7 @@ export function ActAgent() {
                     <span
                       key={i}
                       className="w-1.5 h-1.5 rounded-full bg-(--copilot-muted) animate-bounce"
-                      style={{ animationDelay: i * 0.15 + "s" }}
+                      style={{ animationDelay: i * 0.15 + 's' }}
                     />
                   ))}
                 </span>
@@ -342,8 +309,8 @@ export function ActAgent() {
         <div className="px-4 py-3 border-t border-(--copilot-border)">
           <form
             onSubmit={(e) => {
-              e.preventDefault()
-              handleSend()
+              e.preventDefault();
+              handleSend();
             }}
             className="flex items-center gap-2 bg-(--copilot-input-bg) rounded-xl px-3 py-2"
           >
@@ -372,40 +339,38 @@ export function ActAgent() {
 
       <button
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Close ACT-SDK Agent" : "Open ACT-SDK Agent"}
+        aria-label={open ? 'Close ACT-SDK Agent' : 'Open ACT-SDK Agent'}
         aria-expanded={open}
         className={[
-          "fixed bottom-6 right-6 z-50",
-          "w-14 h-14 rounded-full shadow-xl",
-          "flex items-center justify-center",
-          "bg-(--copilot-fg) text-(--copilot-bg)",
-          "transition-all duration-300 ease-out",
-          "hover:scale-105 active:scale-95",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--copilot-fg) focus-visible:ring-offset-2",
-          "rotate-0",
-        ].join(" ")}
+          'fixed bottom-6 right-6 z-50',
+          'w-14 h-14 rounded-full shadow-xl',
+          'flex items-center justify-center',
+          'bg-(--copilot-fg) text-(--copilot-bg)',
+          'transition-all duration-300 ease-out',
+          'hover:scale-105 active:scale-95',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--copilot-fg) focus-visible:ring-offset-2',
+          'rotate-0',
+        ].join(' ')}
       >
         <span
           className={[
-            "absolute transition-all duration-200",
-            open ? "opacity-100 rotate-0 scale-100" : "opacity-0 rotate-90 scale-75",
-          ].join(" ")}
+            'absolute transition-all duration-200',
+            open ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-90 scale-75',
+          ].join(' ')}
           aria-hidden="true"
         >
           <X className="w-5 h-5" />
         </span>
         <span
           className={[
-            "absolute transition-all duration-200",
-            open ? "opacity-0 -rotate-90 scale-75" : "opacity-100 rotate-0 scale-100",
-          ].join(" ")}
+            'absolute transition-all duration-200',
+            open ? 'opacity-0 -rotate-90 scale-75' : 'opacity-100 rotate-0 scale-100',
+          ].join(' ')}
           aria-hidden="true"
         >
           <Sparkles className="w-5 h-5" />
         </span>
       </button>
     </div>
-  )
-}
-`;
+  );
 }
