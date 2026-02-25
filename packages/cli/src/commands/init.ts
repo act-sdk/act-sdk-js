@@ -3,11 +3,63 @@ import chalk from 'chalk';
 import ora from 'ora';
 import fs from 'fs-extra';
 import path from 'path';
+import { execa } from 'execa';
 
-export async function init() {
+type Framework = 'next-app' | 'next-pages' | 'react';
+
+type InitAnswers = {
+  framework: Framework;
+  projectId: string;
+  actionsPath: string;
+};
+
+interface InitOptions {
+  skipInstall?: boolean;
+}
+
+const REQUIRED_DEPENDENCIES = ['@act-sdk/core', '@act-sdk/react', 'zod'];
+
+function normalizeImportPath(actionsPath: string): string {
+  const withoutExtension = actionsPath.replace(/\.[cm]?[tj]sx?$/, '');
+  return withoutExtension.startsWith('./') || withoutExtension.startsWith('../')
+    ? withoutExtension
+    : `@/${withoutExtension}`;
+}
+
+async function detectPackageManager(cwd: string): Promise<'pnpm' | 'npm' | 'yarn' | 'bun'> {
+  if (await fs.pathExists(path.join(cwd, 'pnpm-lock.yaml'))) return 'pnpm';
+  if (await fs.pathExists(path.join(cwd, 'yarn.lock'))) return 'yarn';
+  if (await fs.pathExists(path.join(cwd, 'bun.lockb'))) return 'bun';
+  if (await fs.pathExists(path.join(cwd, 'package-lock.json'))) return 'npm';
+
+  const userAgent = process.env['npm_config_user_agent']?.toLowerCase() ?? '';
+  if (userAgent.includes('pnpm')) return 'pnpm';
+  if (userAgent.includes('yarn')) return 'yarn';
+  if (userAgent.includes('bun')) return 'bun';
+
+  return 'npm';
+}
+
+async function installDependencies(cwd: string): Promise<'pnpm' | 'npm' | 'yarn' | 'bun'> {
+  const packageManager = await detectPackageManager(cwd);
+
+  if (packageManager === 'pnpm') {
+    await execa('pnpm', ['add', ...REQUIRED_DEPENDENCIES], { cwd, stdio: 'inherit' });
+  } else if (packageManager === 'yarn') {
+    await execa('yarn', ['add', ...REQUIRED_DEPENDENCIES], { cwd, stdio: 'inherit' });
+  } else if (packageManager === 'bun') {
+    await execa('bun', ['add', ...REQUIRED_DEPENDENCIES], { cwd, stdio: 'inherit' });
+  } else {
+    await execa('npm', ['install', ...REQUIRED_DEPENDENCIES], { cwd, stdio: 'inherit' });
+  }
+
+  return packageManager;
+}
+
+export async function init(options: InitOptions = {}) {
   console.log(chalk.bold('\n  Act SDK — Setup\n'));
 
-  const answers = await prompts([
+  const answers = (await prompts([
     {
       type: 'select',
       name: 'framework',
@@ -30,44 +82,75 @@ export async function init() {
       message: 'Where will your actions live?',
       initial: 'lib/actions.ts',
     },
-  ]);
+  ])) as InitAnswers;
 
-  const spinner = ora('Scaffolding Act SDK...').start();
-
-  const cwd = process.cwd();
-
-  await fs.outputFile(path.join(cwd, 'act-sdk.config.ts'), generateConfig(answers));
-
-  await fs.outputFile(path.join(cwd, answers.actionsPath), generateActionsFile());
-
-  const envPath = path.join(cwd, '.env.local');
-  const envEntry = `\nNEXT_PUBLIC_ACT_API_KEY=your_api_key_here\n`;
-  await fs.appendFile(envPath, envEntry);
-
-  if (answers.framework === 'next-app') {
-    await fs.outputFile(path.join(cwd, 'app/act-provider.tsx'), generateProvider());
+  if (!answers.framework || !answers.projectId || !answers.actionsPath) {
+    console.log(chalk.yellow('Setup canceled.'));
+    return;
   }
 
-  spinner.succeed('Act SDK scaffolded successfully!');
+  const spinner = ora('Initializing Act-SDK...').start();
+  const cwd = process.cwd();
 
-  console.log(chalk.dim('\n  Next steps:\n'));
-  console.log(`  1. Add your API key to ${chalk.cyan('.env.local')}`);
-  console.log(`  2. Wrap your actions in ${chalk.cyan(answers.actionsPath)}`);
-  console.log(`  3. Run ${chalk.cyan('npx act-sdk generate')} to generate config`);
-  console.log(`  4. Run ${chalk.cyan('npx act-sdk add agent')} to add the UI\n`);
+  try {
+    await fs.outputFile(path.join(cwd, 'act-sdk.config.ts'), generateConfig(answers));
+    await fs.outputFile(path.join(cwd, answers.actionsPath), generateActionsFile());
+
+    const envPath = path.join(cwd, '.env.local');
+    const envKey = 'NEXT_PUBLIC_ACT_API_KEY=';
+    const envEntry = `${envKey}your_api_key_here`;
+
+    if (await fs.pathExists(envPath)) {
+      const current = await fs.readFile(envPath, 'utf-8');
+      if (!current.includes(envKey)) {
+        await fs.appendFile(envPath, `\n${envEntry}\n`);
+      }
+    } else {
+      await fs.writeFile(envPath, `${envEntry}\n`);
+    }
+
+    if (answers.framework === 'next-app') {
+      await fs.outputFile(
+        path.join(cwd, 'app/act-provider.tsx'),
+        generateProvider(normalizeImportPath(answers.actionsPath)),
+      );
+    }
+
+    let packageManager: 'pnpm' | 'npm' | 'yarn' | 'bun' | null = null;
+
+    if (!options.skipInstall) {
+      spinner.text = 'Installing dependencies...';
+      packageManager = await installDependencies(cwd);
+    }
+
+    spinner.succeed('Act SDK initialized successfully!');
+
+    console.log(chalk.dim('\n  Next steps:\n'));
+    console.log(`  1. Add your API key to ${chalk.cyan('.env.local')}`);
+    console.log(`  2. Add your real actions in ${chalk.cyan(answers.actionsPath)}`);
+    if (options.skipInstall) {
+      console.log(
+        `  3. Install dependencies: ${chalk.cyan(`pnpm add ${REQUIRED_DEPENDENCIES.join(' ')}`)}`,
+      );
+      console.log(`  4. Run ${chalk.cyan('npx @act-sdk/cli add agent')} to add the UI\n`);
+    } else {
+      console.log(`  3. Dependencies installed with ${chalk.cyan(packageManager ?? 'npm')}`);
+      console.log(`  4. Run ${chalk.cyan('npx @act-sdk/cli add agent')} to add the UI\n`);
+    }
+  } catch (error) {
+    spinner.fail(chalk.red('Act SDK setup failed'));
+    console.error(chalk.red(error instanceof Error ? error.message : 'Unknown error'));
+    process.exit(1);
+  }
 }
 
-function generateConfig(answers: { projectId: string; actionsPath: string }) {
+function generateConfig(answers: { projectId: string }) {
   return `import { defineConfig } from "@act-sdk/core"
 
-// Auto-generated by act-sdk generate
-// Do not edit manually
-
-export default defineConfig({
+export const actSdkConfig = defineConfig({
   apiKey: process.env.NEXT_PUBLIC_ACT_API_KEY!,
   projectId: "${answers.projectId}",
   description: "My application",
-  restrictedRoutes: [],
 })
 `;
 }
@@ -78,8 +161,6 @@ import { z } from "zod"
 
 export const act = createAct()
 
-// Wrap your functions here
-// Example:
 export const exampleAction = act.action({
   id: "example_action",
   description: "An example action",
@@ -92,16 +173,16 @@ export const exampleAction = act.action({
 `;
 }
 
-function generateProvider() {
+function generateProvider(actionsImportPath: string) {
   return `"use client"
 
 import { ActProvider } from "@act-sdk/react"
-import config from "@/act-sdk.config"
-import { act } from "@/lib/actions"
+import { actSdkConfig } from "@/act-sdk.config"
+import { act } from "${actionsImportPath}"
 
 export function Provider({ children }: { children: React.ReactNode }) {
   return (
-    <ActProvider act={act} config={config}>
+    <ActProvider act={act} config={actSdkConfig}>
       {children}
     </ActProvider>
   )

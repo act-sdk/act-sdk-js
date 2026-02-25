@@ -1,13 +1,11 @@
 'use client';
 
-import { ActProvider, useAct } from '@act-sdk/react';
 import { act, actSdkConfig } from '@/act-sdk.config';
-import { useState, useRef, useEffect } from 'react';
-import { z } from 'zod';
 import { ActAgent } from '@/components/act-sdk/agent';
+import { ActProvider } from '@act-sdk/react';
+import { useState } from 'react';
+import { z } from 'zod';
 
-// ── Native app functions wrapped with act.action ──────────
-// These work from buttons AND from the AI chat
 function useCalculatorActions(
   setResult: (r: number | string) => void,
   setHistory: (fn: (h: string[]) => string[]) => void,

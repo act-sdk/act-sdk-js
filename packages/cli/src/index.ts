@@ -7,7 +7,11 @@ const program = new Command();
 
 program.name('act-sdk').description('CLI for Act SDK').version('0.1.0');
 
-program.command('init').description('Scaffold Act SDK into your project').action(init);
+program
+  .command('init')
+  .description('Scaffold Act SDK into your project')
+  .option('--skip-install', 'Do not install dependencies automatically')
+  .action(init);
 
 program
   .command('add')
