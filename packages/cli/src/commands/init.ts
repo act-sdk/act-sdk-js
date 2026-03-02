@@ -162,7 +162,7 @@ import { z } from "zod"
 export const act = createAct()
 
 export const exampleAction = act.action({
-  id: "example_action",
+  id: "exampleAction",
   description: "An example action",
   input: z.object({
     message: z.string(),

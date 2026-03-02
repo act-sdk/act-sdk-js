@@ -1,10 +1,10 @@
 {
   "name": "@act-sdk/cli",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "description": "CLI for Act SDK",
   "type": "module",
   "bin": {
-    "act-sdk": "./dist/index.js"
+    "act-sdk": "dist/index.js"
   },
   "main": "./dist/index.js",
   "files": [
@@ -28,6 +28,7 @@
     "ora": "^8.0.0",
     "prompts": "^2.4.2",
     "ts-morph": "^23.0.0",
+    "zod": "^3.22.0",
     "zod-to-json-schema": "^3.23.0"
   },
   "devDependencies": {

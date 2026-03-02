@@ -11,7 +11,7 @@ function useCalculatorActions(
   setHistory: (fn: (h: string[]) => string[]) => void,
 ) {
   const add = act.action({
-    id: 'add_numbers',
+    id: 'addNumbers',
     description: 'Add two numbers together',
     input: z.object({ a: z.number(), b: z.number() }),
   })(async ({ a, b }) => {
@@ -21,7 +21,7 @@ function useCalculatorActions(
   });
 
   const subtract = act.action({
-    id: 'subtract_numbers',
+    id: 'subtractNumbers',
     description: 'Subtract one number from another',
     input: z.object({ a: z.number(), b: z.number() }),
   })(async ({ a, b }) => {
@@ -31,7 +31,7 @@ function useCalculatorActions(
   });
 
   const multiply = act.action({
-    id: 'multiply_numbers',
+    id: 'multiplyNumbers',
     description: 'Multiply two numbers together',
     input: z.object({ a: z.number(), b: z.number() }),
   })(async ({ a, b }) => {
@@ -41,7 +41,7 @@ function useCalculatorActions(
   });
 
   const divide = act.action({
-    id: 'divide_numbers',
+    id: 'divideNumbers',
     description: 'Divide one number by another',
     input: z.object({ a: z.number(), b: z.number() }),
   })(async ({ a, b }) => {

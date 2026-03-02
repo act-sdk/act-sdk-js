@@ -5,11 +5,13 @@ import { readFile } from 'fs/promises';
 import ora from 'ora';
 import path, { resolve } from 'path';
 import { Node, Project, SyntaxKind, type Expression, type ObjectLiteralExpression } from 'ts-morph';
+import { z, type ZodTypeAny } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 interface SyncPayload {
   projectId: string;
   actions: Array<{
-    id: string;
+    actionId: string;
     description: string;
     hasInput: boolean;
     inputSchema?: Record<string, unknown>;
@@ -111,7 +113,10 @@ function parseObjectLiteral(objectLiteral: ObjectLiteralExpression): Record<stri
       throw new Error(`Unsupported config property syntax: "${property.getText()}"`);
     }
 
-    const key = property.getNameNode().getText().replace(/^['"]|['"]$/g, '');
+    const key = property
+      .getNameNode()
+      .getText()
+      .replace(/^['"]|['"]$/g, '');
     const initializer = property.getInitializer();
     if (!initializer || !Node.isExpression(initializer)) {
       throw new Error(`Missing value for config key "${key}"`);
@@ -121,6 +126,25 @@ function parseObjectLiteral(objectLiteral: ObjectLiteralExpression): Record<stri
   }
 
   return result;
+}
+
+function toJsonSchemaFromInlineZodExpression(
+  expression: Expression | undefined,
+): Record<string, unknown> | undefined {
+  if (!expression) return undefined;
+
+  const raw = expression.getText().trim();
+  if (!raw.startsWith('z.')) return undefined;
+
+  try {
+    // Only evaluate inline zod expressions (e.g. z.object({...})) to avoid executing
+    // arbitrary project code while still supporting common action definitions.
+    const schema = new Function('z', `return (${raw});`)(z) as ZodTypeAny;
+    const jsonSchema = zodToJsonSchema(schema);
+    return jsonSchema as Record<string, unknown>;
+  } catch {
+    return undefined;
+  }
 }
 
 function toActSdkConfig(rawConfig: Record<string, unknown>): ActSdkConfig {
@@ -180,9 +204,9 @@ function parseTsConfig(configContent: string): ActSdkConfig {
     candidates.push(defaultExport.getExpression());
   }
 
-  const variableStatements = sourceFile.getVariableStatements().filter((statement) =>
-    statement.isExported(),
-  );
+  const variableStatements = sourceFile
+    .getVariableStatements()
+    .filter((statement) => statement.isExported());
 
   for (const statement of variableStatements) {
     for (const declaration of statement.getDeclarations()) {
@@ -248,25 +272,52 @@ async function extractActionsFromProject(projectPath: string): Promise<SyncPaylo
       if (!args[0]) continue;
 
       const metaObj = args[0];
-      if (metaObj.getKind() !== SyntaxKind.ObjectLiteralExpression) continue;
+      if (!Node.isObjectLiteralExpression(metaObj)) continue;
 
-      const properties = metaObj.getDescendantsOfKind(SyntaxKind.PropertyAssignment);
+      const metaProperties = metaObj.getProperties();
 
-      const meta: Record<string, string> = {};
-      for (const prop of properties) {
-        const name = prop.getName();
-        const value = prop.getInitializer()?.getText().replace(/['"]/g, '') ?? '';
-        meta[name] = value;
+      let actionId: string | undefined;
+      let description: string | undefined;
+      let inputSchema: Record<string, unknown> | undefined;
+      let hasInput = false;
+
+      for (const property of metaProperties) {
+        if (!Node.isPropertyAssignment(property)) continue;
+        const name = property.getName();
+        const initializer = property.getInitializer();
+        if (!initializer || !Node.isExpression(initializer)) continue;
+
+        if (name === 'id') {
+          try {
+            const parsed = parseExpressionValue(initializer);
+            if (typeof parsed === 'string') actionId = parsed;
+          } catch {
+            // Skip unsupported id expressions.
+          }
+        }
+
+        if (name === 'description') {
+          try {
+            const parsed = parseExpressionValue(initializer);
+            if (typeof parsed === 'string') description = parsed;
+          } catch {
+            // Skip unsupported description expressions.
+          }
+        }
+
+        if (name === 'input') {
+          hasInput = true;
+          inputSchema = toJsonSchemaFromInlineZodExpression(initializer);
+        }
       }
 
-      if (!meta['id'] || !meta['description']) continue;
-
-      const hasInput = !!meta['input'];
+      if (!actionId || !description) continue;
 
       actions.push({
-        id: meta['id'],
-        description: meta['description'],
+        actionId,
+        description,
         hasInput,
+        inputSchema,
       });
     }
   }
@@ -275,7 +326,7 @@ async function extractActionsFromProject(projectPath: string): Promise<SyncPaylo
 }
 
 async function syncToCloud(payload: SyncPayload, endpoint: string, apiKey: string): Promise<void> {
-  const response = await fetch(`${endpoint}/api/sync/actions`, {
+  const response = await fetch(`${endpoint}/api/actions/sync`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -313,7 +364,7 @@ export const sync = async (
     spinner.text = 'Extracting action definitions...';
     const actions = await extractActionsFromProject(projectPath);
 
-    spinner.text = 'Syncing to cloud...';
+    spinner.text = 'Syncing actions to Act SDK API...';
     const payload: SyncPayload = {
       projectId: config.projectId,
       actions,

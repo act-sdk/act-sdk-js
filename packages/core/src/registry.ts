@@ -5,9 +5,6 @@ export class ActionRegistry {
   private map = new Map<string, RegistryEntry>();
 
   register(entry: RegistryEntry): void {
-    if (this.map.has(entry.meta.id)) {
-      console.warn(`[act] Action "${entry.meta.id}" already registered, overwriting`);
-    }
     this.map.set(entry.meta.id, entry);
   }
 

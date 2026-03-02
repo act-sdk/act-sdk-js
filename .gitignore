@@ -5,3 +5,6 @@ dist
 .turbo
 coverage
 *.tsbuildinfo
+.npmrc
+*.env
+*.log
