@@ -138,10 +138,13 @@ Initialize SDK files in an existing app:
 npx @act-sdk/cli init
 ```
 
-`init` scaffolds config/action files and installs:
+`init` scaffolds `act-sdk.config.ts` and `providers/act-provider.tsx`, then installs:
 - `@act-sdk/core`
 - `@act-sdk/react`
 - `zod`
+
+The generated config exports both `act` and `actSdkConfig`, includes `endpoint`, and uses `process.env.NEXT_PUBLIC_ACT_SDK_API_KEY`.
+Define your actions anywhere in your app by importing `act` from `act-sdk.config.ts`.
 
 Add the bundled Agent UI component:
 

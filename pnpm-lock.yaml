@@ -88,8 +88,8 @@ importers:
   packages/cli:
     dependencies:
       '@act-sdk/core':
-        specifier: workspace:*
-        version: link:../core
+        specifier: ^1.0.1
+        version: 1.0.1(zod@3.25.76)
       chalk:
         specifier: ^5.3.0
         version: 5.6.2
@@ -143,8 +143,8 @@ importers:
   packages/react:
     dependencies:
       '@act-sdk/core':
-        specifier: workspace:*
-        version: link:../core
+        specifier: ^1.0.1
+        version: 1.0.1(zod@3.25.76)
       '@ai-sdk/react':
         specifier: ^3.0.94
         version: 3.0.94(react@19.2.3)(zod@3.25.76)
@@ -163,6 +163,11 @@ importers:
         version: 19.2.14
 
 packages:
+
+  '@act-sdk/core@1.0.1':
+    resolution: {integrity: sha512-KCg4VWNm8aFCj1cTHfSG+2L29jx0uUYIj+I077ttrcG8Fds4oUKv0H7Hw2IPgjRNug0rO4GdMZ24+u2Sn/cA+Q==}
+    peerDependencies:
+      zod: ^3
 
   '@ai-sdk/gateway@3.0.51':
     resolution: {integrity: sha512-VXYxgDv2U1GJj6xY3aVd9glEmotGmsQllmKDUEghoghlZhEX6F64JsBQx/TukmlJGM98iAYCmofIwGFddv8ZTA==}
@@ -2208,6 +2213,11 @@ packages:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
 snapshots:
+
+  '@act-sdk/core@1.0.1(zod@3.25.76)':
+    dependencies:
+      zod: 3.25.76
+      zod-to-json-schema: 3.25.1(zod@3.25.76)
 
   '@ai-sdk/gateway@3.0.51(zod@3.25.76)':
     dependencies:

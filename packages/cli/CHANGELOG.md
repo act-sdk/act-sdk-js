@@ -1,5 +1,11 @@
 # @act-sdk/cli
 
+## 1.0.2
+
+### Patch Changes
+
+- patched the scaffolding of the app
+
 ## 1.0.1
 
 ### Patch Changes

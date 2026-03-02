@@ -36,7 +36,15 @@ act-sdk --help
 
 ### `act-sdk init`
 
-Scaffolds Act SDK files into your project and installs required dependencies.
+Scaffolds `act-sdk.config.ts` and `providers/act-provider.tsx` into your project and installs required dependencies.
+
+The generated config:
+- exports `act` and `actSdkConfig`
+- includes an explicit `endpoint`
+- uses `process.env.NEXT_PUBLIC_ACT_SDK_API_KEY`
+
+You can define actions anywhere in your app by importing `act` from `act-sdk.config.ts`.
+The generated provider file imports `act` and `actSdkConfig` and wraps your app with `@act-sdk/react`.
 
 ```bash
 act-sdk init
