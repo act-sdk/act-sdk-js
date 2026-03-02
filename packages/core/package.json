@@ -1,6 +1,6 @@
 {
   "name": "@act-sdk/core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -20,6 +20,7 @@
   },
   "scripts": {
     "build": "tsup",
+    "prepack": "pnpm run build",
     "dev": "tsup --watch",
     "typecheck": "pnpm -s tsc --noEmit -p tsconfig.json"
   },

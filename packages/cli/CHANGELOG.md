@@ -1,5 +1,13 @@
 # @act-sdk/cli
 
+## 1.0.1
+
+### Patch Changes
+
+- fixing the npx issue for installing to users
+- Updated dependencies
+  - @act-sdk/core@1.0.1
+
 ## 2.0.0
 
 ### Major Changes

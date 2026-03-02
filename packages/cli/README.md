@@ -8,6 +8,23 @@ Command-line tools for scaffolding and syncing Act SDK projects.
 npx @act-sdk/cli init
 ```
 
+This only works after `@act-sdk/cli` has been published to npm.
+
+## Local Development
+
+```bash
+pnpm --filter @act-sdk/cli run build
+node packages/cli/dist/index.js init
+```
+
+If you want a global command locally:
+
+```bash
+cd packages/cli
+npm link
+act-sdk init
+```
+
 ## Install Globally (Optional)
 
 ```bash

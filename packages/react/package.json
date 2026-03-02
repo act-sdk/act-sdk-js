@@ -1,6 +1,6 @@
 {
   "name": "@act-sdk/react",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -20,11 +20,12 @@
   },
   "scripts": {
     "build": "tsup",
+    "prepack": "pnpm run build",
     "dev": "tsup --watch",
     "typecheck": "pnpm -s tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@act-sdk/core": "workspace:*",
+    "@act-sdk/core": "^1.0.1",
     "@ai-sdk/react": "^3.0.94",
     "ai": "^6.0.92",
     "zod": "^3.22.0"

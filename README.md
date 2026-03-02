@@ -184,10 +184,13 @@ Release flow:
 ```bash
 pnpm changeset
 pnpm version-packages
-pnpm build
+pnpm release:dry-run
 pnpm release
 ```
 
 Notes:
 - Publish from `main` after CI is green.
 - `.changeset/config.json` already ignores `demo-next`.
+- `pnpm changeset` is the step where you pick which packages to bump and whether each one is a `patch`, `minor`, or `major`.
+- `pnpm version-packages` applies the version bump to `package.json`, updates changelogs, and refreshes `pnpm-lock.yaml`.
+- `pnpm release` publishes in dependency order: `@act-sdk/core`, then `@act-sdk/react`, then `@act-sdk/cli`.

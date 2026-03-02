@@ -9,8 +9,9 @@
     "typecheck": "turbo typecheck",
     "clean": "turbo clean",
     "changeset": "changeset",
-    "version-packages": "changeset version",
-    "release": "changeset publish"
+    "version-packages": "changeset version && pnpm install --no-frozen-lockfile",
+    "release:dry-run": "node scripts/publish-packages.mjs --dry-run",
+    "release": "node scripts/publish-packages.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
