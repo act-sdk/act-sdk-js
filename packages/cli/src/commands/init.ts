@@ -97,7 +97,9 @@ export async function init(options: InitOptions = {}) {
     spinner.succeed('Act SDK initialized successfully!');
 
     console.log(chalk.dim('\n  Next steps:\n'));
-    console.log(`  1. Add your API key to ${chalk.cyan('.env')}`);
+    console.log(
+      `  1. Add your API key as ${chalk.cyan('NEXT_PUBLIC_ACT_SDK_API_KEY')} in ${chalk.cyan('.env')}`,
+    );
     console.log(
       `  2. Define your actions anywhere in your app and import ${chalk.cyan('act')} from ${chalk.cyan('act-sdk.config.ts')}`,
     );
