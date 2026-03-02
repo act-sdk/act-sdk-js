@@ -148,13 +148,20 @@ function toJsonSchemaFromInlineZodExpression(
 }
 
 function toActSdkConfig(rawConfig: Record<string, unknown>): ActSdkConfig {
-  const apiKey = rawConfig['apiKey'];
+  const apiKeyFromConfig = rawConfig['apiKey'];
   const projectId = rawConfig['projectId'];
   const description = rawConfig['description'];
   const endpoint = rawConfig['endpoint'];
 
+  const apiKey =
+    typeof apiKeyFromConfig === 'string' && apiKeyFromConfig.length > 0
+      ? apiKeyFromConfig
+      : process.env['NEXT_PUBLIC_ACT_SDK_API_KEY'];
+
   if (typeof apiKey !== 'string' || apiKey.length === 0) {
-    throw new Error('Config "apiKey" must be a non-empty string or process.env reference');
+    throw new Error(
+      'Config "apiKey" must be a non-empty string or process.env reference (fallback: NEXT_PUBLIC_ACT_SDK_API_KEY)',
+    );
   }
   if (typeof projectId !== 'string' || projectId.length === 0) {
     throw new Error('Config "projectId" must be a non-empty string');

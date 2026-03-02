@@ -97,7 +97,7 @@ export async function init(options: InitOptions = {}) {
     await fs.outputFile(path.join(cwd, answers.actionsPath), generateActionsFile());
 
     const envPath = path.join(cwd, '.env.local');
-    const envKey = 'NEXT_PUBLIC_ACT_API_KEY=';
+    const envKey = 'NEXT_PUBLIC_ACT_SDK_API_KEY=';
     const envEntry = `${envKey}your_api_key_here`;
 
     if (await fs.pathExists(envPath)) {
@@ -148,7 +148,7 @@ function generateConfig(answers: { projectId: string }) {
   return `import { defineConfig } from "@act-sdk/core"
 
 export const actSdkConfig = defineConfig({
-  apiKey: process.env.NEXT_PUBLIC_ACT_API_KEY!,
+  apiKey: process.env.NEXT_PUBLIC_ACT_SDK_API_KEY!,
   projectId: "${answers.projectId}",
   description: "My application",
 })
