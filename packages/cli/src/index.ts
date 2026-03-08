@@ -15,9 +15,12 @@ program
 
 program
   .command('add')
-  .description('Add a UI component to your project')
-  .argument('<component>', 'Component to add e.g. agent')
-  .action(add);
+  .description('Add the Act command bar component to your project')
+  .argument('<component>', 'Component to add (command)')
+  .option('--skip-install', 'Do not install dependencies automatically')
+  .action(async (component: string, opts: { skipInstall?: boolean }) => {
+    await add(component, opts);
+  });
 
 program
   .command('sync')

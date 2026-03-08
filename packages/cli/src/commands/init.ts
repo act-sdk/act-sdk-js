@@ -53,6 +53,35 @@ export async function init(options: InitOptions = {}) {
     ),
   );
 
+  const { openDashboard } = await prompts({
+    type: 'confirm',
+    name: 'openDashboard',
+    message: 'Open the Act dashboard in your browser to log in and grab your Project ID & API key?',
+    initial: true,
+  });
+
+  if (openDashboard) {
+    const url = 'https://www.act-sdk.dev/auth';
+    console.log(
+      chalk.dim(
+        `\n  Opening dashboard (or open this URL manually if it does not open automatically):\n  ${chalk.cyan(
+          url,
+        )}\n`,
+      ),
+    );
+    try {
+      if (process.platform === 'darwin') {
+        await execa('open', [url], { stdio: 'ignore' });
+      } else if (process.platform === 'win32') {
+        await execa('cmd', ['/c', 'start', '', url], { stdio: 'ignore' });
+      } else {
+        await execa('xdg-open', [url], { stdio: 'ignore' });
+      }
+    } catch {
+      // ignore failures, user still has the URL printed above
+    }
+  }
+
   const answers = (await prompts([
     {
       type: 'text',
@@ -110,10 +139,10 @@ export async function init(options: InitOptions = {}) {
       console.log(
         `  4. Install dependencies: ${chalk.cyan(`pnpm add ${REQUIRED_DEPENDENCIES.join(' ')}`)}`,
       );
-      console.log(`  5. Run ${chalk.cyan('npx @act-sdk/cli add agent')} to add the UI`);
+      console.log(`  5. Run ${chalk.cyan('npx @act-sdk/cli add command')} to add the command palette UI`);
     } else {
       console.log(`  4. Dependencies installed with ${chalk.cyan(packageManager ?? 'npm')}`);
-      console.log(`  5. Run ${chalk.cyan('npx @act-sdk/cli add agent')} to add the UI`);
+      console.log(`  5. Run ${chalk.cyan('npx @act-sdk/cli add command')} to add the command palette UI`);
     }
     console.log(chalk.green('\n  Happy hacking. Let users control your app with AI.\n'));
   } catch (error) {
@@ -132,7 +161,7 @@ export const actSdkConfig = defineConfig({
   apiKey: process.env.NEXT_PUBLIC_ACT_SDK_API_KEY!,
   projectId: "${answers.projectId}",
   description: "My Act actions",
-  endpoint: "https://act-sdk.dev",
+  endpoint: "https://www.act-sdk.dev",
 })
 `;
 }

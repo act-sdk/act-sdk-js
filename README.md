@@ -1,6 +1,7 @@
 # Act SDK JS
 
 Monorepo for the JavaScript Act SDK:
+
 - `@act-sdk/core`: action registry + config helpers.
 - `@act-sdk/react`: React provider and `useAct` hook.
 - `@act-sdk/cli`: CLI for `init`, `add`, and `sync`.
@@ -20,10 +21,10 @@ Skip auto-install if needed:
 npx @act-sdk/cli init --skip-install
 ```
 
-Add the bundled Agent UI component:
+Add the bundled Act command bar:
 
 ```bash
-npx @act-sdk/cli add agent
+npx @act-sdk/cli add command
 ```
 
 Sync discovered actions to your backend endpoint:
@@ -35,7 +36,7 @@ npx @act-sdk/cli sync
 ## Clone This Repository
 
 ```bash
-git clone <your-github-repo-url>
+git clone https://github.com/act-sdk/act-sdk-js
 cd act-sdk-js
 pnpm install
 ```
@@ -49,6 +50,7 @@ pnpm dev
 ```
 
 Workspace scripts:
+
 - `pnpm dev`: run all package/app dev tasks via Turbo.
 - `pnpm build`: build all packages and apps.
 - `pnpm typecheck`: run type-checking across the workspace.
@@ -64,22 +66,22 @@ import { z } from 'zod';
 
 export const act = createAct();
 
-export const addNumbers = act.action({
-  id: 'calculator_add',
-  description: 'Add two numbers',
+export const deleteUser = act.action({
+  id: 'delete_user',
+  description: 'Delete a user by email',
   input: z.object({
-    a: z.number(),
-    b: z.number(),
+    email: z.string().email(),
   }),
-})(async ({ a, b }) => {
-  console.log(a + b);
+})(async ({ email }) => {
+  // Replace with your own deletion logic
+  console.log('Deleting user', email);
 });
 
 export const actSdkConfig = defineConfig({
   apiKey: process.env.NEXT_PUBLIC_ACT_API_KEY!,
   projectId: 'proj_123',
   description: 'My application actions',
-  endpoint: 'https://act-sdk.dev',
+  endpoint: 'https://www.act-sdk.dev',
 });
 ```
 
@@ -100,32 +102,96 @@ export function Providers({ children }: { children: React.ReactNode }) {
 }
 ```
 
-### 3) Use the hook
+### 3) Use the hook in a command bar
 
 ```tsx
 'use client';
 
 import { useAct } from '@act-sdk/react';
-import { useState } from 'react';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { useEffect, useRef, useState } from 'react';
 
-export function ChatBox() {
-  const [prompt, setPrompt] = useState('');
+const EXAMPLE_PROMPTS = [
+  'Delete user [email protected]',
+  'Refund the last payment',
+  'Suspend user [email protected]',
+];
+
+export function ActCommand() {
   const { messages, send, status } = useAct();
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState('');
+  const commandRef = useRef<HTMLDivElement>(null);
+  const loading = status === 'submitted' || status === 'streaming';
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener('keydown', down);
+    return () => document.removeEventListener('keydown', down);
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      const inputEl = commandRef.current?.querySelector<HTMLInputElement>('input');
+      setTimeout(() => inputEl?.focus(), 150);
+    }
+  }, [open]);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const value = input.trim();
+    if (!value || loading) return;
+    send(value);
+    setInput('');
+  }
+
+  function handleSuggestionClick(prompt: string) {
+    if (loading) return;
+    send(prompt);
+  }
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        send(prompt);
-        setPrompt('');
-      }}
-    >
-      <input value={prompt} onChange={(e) => setPrompt(e.target.value)} />
-      <button type="submit" disabled={status === 'streaming' || status === 'submitted'}>
-        Send
-      </button>
-      <pre>{JSON.stringify(messages, null, 2)}</pre>
-    </form>
+    <>
+      {/* Your dialog/shell here if desired */}
+      <div ref={commandRef}>
+        <Command>
+          <form onSubmit={handleSubmit}>
+            <CommandInput
+              value={input}
+              onValueChange={setInput}
+              placeholder="Type what you want to do..."
+              aria-label="Ask in natural language"
+              disabled={loading}
+            />
+          </form>
+          <CommandList>
+            <CommandEmpty>Type what you want to do…</CommandEmpty>
+            <CommandGroup heading="Suggestions">
+              {EXAMPLE_PROMPTS.map((prompt) => (
+                <CommandItem
+                  key={prompt}
+                  onSelect={() => handleSuggestionClick(prompt)}
+                >
+                  <span>{prompt}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </div>
+    </>
   );
 }
 ```
@@ -139,6 +205,7 @@ npx @act-sdk/cli init
 ```
 
 `init` scaffolds `act-sdk.config.ts` and `providers/act-provider.tsx`, then installs:
+
 - `@act-sdk/core`
 - `@act-sdk/react`
 - `zod`
@@ -192,6 +259,7 @@ pnpm release
 ```
 
 Notes:
+
 - Publish from `main` after CI is green.
 - `.changeset/config.json` already ignores `demo-next`.
 - `pnpm changeset` is the step where you pick which packages to bump and whether each one is a `patch`, `minor`, or `major`.

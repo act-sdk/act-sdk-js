@@ -1,7 +1,7 @@
 'use client';
 
 import { act, actSdkConfig } from '@/act-sdk.config';
-import { ActAgent } from '@/components/act-sdk/agent';
+import { ActCommand } from '@/components/act-sdk/command';
 import { ActProvider } from '@act-sdk/react';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -174,9 +174,15 @@ function App({
         )}
       </div>
 
-      {/* ── Right: Chat ── */}
-      <div className="md:w-1/2 flex flex-col">
-        <ActAgent />
+      {/* ── Right: Command palette (natural language) ── */}
+      <div className="md:w-1/2 flex flex-col items-center justify-center p-8">
+        <p className="text-sm text-zinc-500 text-center max-w-xs">
+          Press{' '}
+          <kbd className="px-2 py-1 rounded bg-zinc-800 text-zinc-300 font-mono text-xs">⌘K</kbd> or
+          click the button. Ask what you want in natural language—e.g. &quot;add 5 and 3&quot; or
+          &quot;multiply the numbers&quot;.
+        </p>
+        <ActCommand />
       </div>
     </div>
   );

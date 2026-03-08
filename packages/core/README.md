@@ -37,7 +37,7 @@ export const config = defineConfig({
   apiKey: process.env.ACT_API_KEY!,
   projectId: 'proj_123',
   description: 'My Act actions',
-  endpoint: 'https://act-sdk.dev',
+  endpoint: 'https://www.act-sdk.dev',
 });
 ```
 
@@ -52,4 +52,4 @@ type ActSdkConfig = {
 };
 ```
 
-If `endpoint` is omitted, the SDK uses `https://act-sdk.dev`.
+If `endpoint` is omitted, the SDK uses `https://www.act-sdk.dev`.

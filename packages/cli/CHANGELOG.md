@@ -1,5 +1,22 @@
 # @act-sdk/cli
 
+## 1.1.0
+
+### Minor Changes
+
+- added the command bar for sending messages and changed the endpoint to www for cors headers issues
+
+### Patch Changes
+
+- Updated dependencies
+  - @act-sdk/core@1.1.0
+
+## 1.0.3
+
+### Patch Changes
+
+- added the env name to the steps
+
 ## 1.0.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @act-sdk/core
 
+## 1.1.0
+
+### Minor Changes
+
+- added the command bar for sending messages and changed the endpoint to www for cors headers issues
+
 ## 1.0.1
 
 ### Patch Changes

@@ -53,10 +53,10 @@ act-sdk init --skip-install
 
 ### `act-sdk add <component>`
 
-Adds UI components (currently `agent`).
+Adds UI components (currently `command` for the Act command bar).
 
 ```bash
-act-sdk add agent
+act-sdk add command
 ```
 
 ### `act-sdk sync`
@@ -75,4 +75,59 @@ act-sdk sync --config ./act-sdk.config.ts --project .
 - `apiKey`
 - `projectId`
 - `description`
-- optional `endpoint` (defaults to `https://act-sdk.dev`)
+- optional `endpoint` (defaults to `https://www.act-sdk.dev`)
+
+## Example: wiring the Act command bar
+
+After running:
+
+```bash
+npx @act-sdk/cli init
+npx @act-sdk/cli add command
+```
+
+you’ll have:
+
+- `act-sdk.config.ts` exporting `act` and `actSdkConfig`
+- `providers/act-provider.tsx` exporting `ActSdkProvider`
+- `components/act-sdk/command.tsx` exporting `ActCommand`
+
+Wrap your app once with the provider (for example in a Next.js root layout):
+
+```tsx
+'use client';
+
+import type { ReactNode } from 'react';
+import { ActSdkProvider } from '@/providers/act-provider';
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <ActSdkProvider>{children}</ActSdkProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+Then mount the command bar so users can type natural-language intents (e.g. “delete user [email protected]”):
+
+```tsx
+import { ActCommand } from '@/components/act-sdk/command';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <ActSdkProvider>
+          {children}
+          <ActCommand /> {/* ⌘K / Ctrl+K opens the command bar */}
+        </ActSdkProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+`ActCommand` internally uses `useAct()` from `@act-sdk/react`, so anything a user types (or selects from suggestions) is sent as an intent that can call your typed actions.

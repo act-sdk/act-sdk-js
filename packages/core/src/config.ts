@@ -1,4 +1,4 @@
-export const DEFAULT_ACT_SDK_API_ENDPOINT = 'https://act-sdk.dev';
+export const DEFAULT_ACT_SDK_API_ENDPOINT = 'https://www.act-sdk.dev';
 
 export interface ActSdkConfig {
   apiKey: string;
