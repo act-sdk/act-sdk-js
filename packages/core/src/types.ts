@@ -1,29 +1,10 @@
-import type { z, ZodType } from 'zod';
+import { z, type ZodTypeAny } from 'zod';
 
-export interface ActionMeta<TInput extends ZodType = ZodType> {
+export interface ActionDef<TInput extends ZodTypeAny = ZodTypeAny, TOutput = unknown> {
   id: string;
   description: string;
   input?: TInput;
+  handler: (args: z.infer<TInput>) => Promise<TOutput> | TOutput;
 }
 
-export type ActionHandler<TInput extends ZodType = ZodType> = (
-  args: z.infer<TInput>,
-) => Promise<void> | void;
-
-export interface RegistryEntry {
-  meta: ActionMeta;
-  handler: ActionHandler;
-}
-
-export interface ActionManifest {
-  id: string;
-  description: string;
-  hasInput: boolean;
-  inputSchema?: Record<string, unknown>;
-}
-
-export type WrappedAction<TInput extends ZodType = ZodType> = ((
-  args: z.infer<TInput>,
-) => Promise<void>) & {
-  _actMeta: ActionMeta<TInput>;
-};
+export type RegistryEntry = ActionDef<ZodTypeAny, unknown>;

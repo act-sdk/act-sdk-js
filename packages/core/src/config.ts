@@ -1,19 +1,12 @@
-export const DEFAULT_ACT_SDK_API_ENDPOINT = 'https://www.act-sdk.dev';
+import { type ActInstance } from './act';
 
-export interface ActSdkConfig {
-  apiKey: string;
-  projectId: string;
-  description: string;
-  endpoint?: string;
+export interface ActConfig {
+  name: string;
+  description?: string;
+  version?: string;
+  act: ActInstance;
 }
 
-export type ResolvedActSdkConfig = ActSdkConfig & {
-  endpoint: string;
-};
-
-export function defineConfig(config: ActSdkConfig): ResolvedActSdkConfig {
-  return {
-    ...config,
-    endpoint: config.endpoint ?? DEFAULT_ACT_SDK_API_ENDPOINT,
-  };
+export function defineConfig(config: ActConfig): ActConfig {
+  return config;
 }

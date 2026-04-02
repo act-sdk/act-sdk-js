@@ -1,5 +1,24 @@
 # @act-sdk/cli
 
+## 2.0.1
+
+### Patch Changes
+
+- fix react deps error
+- Updated dependencies
+  - @act-sdk/core@2.0.1
+
+## 2.0.0
+
+### Major Changes
+
+- added support to zod 4
+
+### Patch Changes
+
+- Updated dependencies
+  - @act-sdk/core@2.0.0
+
 ## 1.1.0
 
 ### Minor Changes

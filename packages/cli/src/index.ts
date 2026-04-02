@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { init } from './commands/init';
 import { add } from './commands/add';
 import { sync } from './commands/sync';
+import { generateManifest } from './commands/generate-manifest';
 
 const program = new Command();
 
@@ -15,8 +16,8 @@ program
 
 program
   .command('add')
-  .description('Add the Act command bar component to your project')
-  .argument('<component>', 'Component to add (command)')
+  .description('Add the Act chat widget component to your project')
+  .argument('<component>', 'Component to add (chat)')
   .option('--skip-install', 'Do not install dependencies automatically')
   .action(async (component: string, opts: { skipInstall?: boolean }) => {
     await add(component, opts);
@@ -24,9 +25,16 @@ program
 
 program
   .command('sync')
-  .description('Sync action definitions to the cloud')
+  .description('Sync action and route definitions to the cloud')
   .option('-c, --config <path>', 'Path to config file', 'act-sdk.config.ts')
   .option('-p, --project <path>', 'Project path', process.cwd())
   .action(sync);
+
+program
+  .command('generate-manifest')
+  .description('Generate act.manifest.json from discovered Act actions and routes')
+  .option('-c, --config <path>', 'Path to config file', 'act-sdk.config.ts')
+  .option('-p, --project <path>', 'Project path', process.cwd())
+  .action(generateManifest);
 
 program.parse();

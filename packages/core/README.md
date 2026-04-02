@@ -1,6 +1,10 @@
 # @act-sdk/core
 
-Core primitives for defining and running Act SDK actions.
+Simple action registry for building extensible applications.
+
+## Overview
+
+`@act-sdk/core` provides a lightweight registry pattern for defining and executing actions with type-safe input validation using Zod schemas.
 
 ## Install
 
@@ -8,48 +12,114 @@ Core primitives for defining and running Act SDK actions.
 npm install @act-sdk/core zod
 ```
 
-## What It Exports
+Supports Zod v3.25+ and Zod v4.
 
-- `createAct()`: creates an action registry.
-- `defineConfig()`: defines and types your SDK config.
-- `DEFAULT_ACT_SDK_API_ENDPOINT`: default API endpoint.
-
-## Quick Example
+## Example
 
 ```ts
-import { createAct, defineConfig } from '@act-sdk/core';
+import { createAct } from '@act-sdk/core';
 import { z } from 'zod';
 
-export const act = createAct();
+const act = createAct();
 
-export const addNumbers = act.action({
-  id: 'calculator_add',
-  description: 'Add two numbers',
-  input: z.object({
-    a: z.number(),
-    b: z.number(),
-  }),
-})(async ({ a, b }) => {
-  console.log(a + b);
+// Register an action
+act.action(
+  {
+    id: 'updateUserRole',
+    description: 'Update a user role by email',
+    input: z.object({
+      email: z.string().email(),
+      role: z.enum(['admin', 'member']),
+    }),
+  },
+  async ({ email, role }) => {
+    await updateUserInDatabase(email, { role });
+    return { success: true };
+  }
+);
+
+// Execute an action
+await act.run('updateUserRole', {
+  email: 'user@example.com',
+  role: 'admin',
 });
 
-export const config = defineConfig({
-  apiKey: process.env.ACT_API_KEY!,
-  projectId: 'proj_123',
-  description: 'My Act actions',
-  endpoint: 'https://www.act-sdk.dev',
-});
+// List all registered actions
+const actions = act.list();
+console.log(actions); // [{ id: 'updateUserRole', description: '...', ... }]
+
+// Check if an action exists
+if (act.has('updateUserRole')) {
+  // ...
+}
 ```
 
-## Config Shape
+## API
+
+### `createAct()`
+
+Creates a new Act SDK instance with an action registry.
+
+**Returns:** `ActSdkInstance` with the following methods:
+
+#### `action(meta, handler)`
+
+Register a new action.
+
+- `meta`: Action metadata including `id`, `description`, and optional `input` schema
+- `handler`: Async function that receives validated input and returns a result
+
+**Returns:** Object with `id` and `meta`
+
+#### `run(actionId, payload)`
+
+Execute a registered action by ID with the given payload.
+
+- `actionId`: The ID of the action to execute
+- `payload`: Input data (will be validated against the action's input schema)
+
+**Returns:** Promise resolving to the action's return value
+
+#### `list()`
+
+List all registered actions with their manifests.
+
+**Returns:** Array of `ActionManifest` objects
+
+#### `has(actionId)`
+
+Check if an action is registered.
+
+- `actionId`: The ID to check
+
+**Returns:** Boolean
+
+#### `clear()`
+
+Clear all registered actions.
+
+## Type Safety
+
+The SDK provides full TypeScript support with type inference from Zod schemas:
 
 ```ts
-type ActSdkConfig = {
-  apiKey: string;
-  projectId: string;
-  description: string;
-  endpoint?: string;
-};
+const greetAction = act.action(
+  {
+    id: 'greet',
+    description: 'Greet a user',
+    input: z.object({
+      name: z.string(),
+    }),
+  },
+  async ({ name }) => {
+    // `name` is typed as string
+    return `Hello, ${name}!`;
+  }
+);
 ```
 
-If `endpoint` is omitted, the SDK uses `https://www.act-sdk.dev`.
+## Related Packages
+
+- `@act-sdk/mcp` - Convert actions to MCP tools
+- `@act-sdk/cli` - CLI for development and tooling
+

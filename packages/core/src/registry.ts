@@ -1,33 +1,28 @@
-import { zodToJsonSchema } from 'zod-to-json-schema';
-import type { RegistryEntry, ActionManifest } from './types';
+import { type RegistryEntry } from './types';
 
 export class ActionRegistry {
-  private map = new Map<string, RegistryEntry>();
+  private actions = new Map<string, RegistryEntry>();
 
   register(entry: RegistryEntry): void {
-    this.map.set(entry.meta.id, entry);
+    if (this.actions.has(entry.id)) {
+      throw new Error(`Action "${entry.id}" is already registered`);
+    }
+    this.actions.set(entry.id, entry);
   }
 
   get(id: string): RegistryEntry | undefined {
-    return this.map.get(id);
+    return this.actions.get(id);
+  }
+
+  all(): RegistryEntry[] {
+    return Array.from(this.actions.values());
   }
 
   has(id: string): boolean {
-    return this.map.has(id);
+    return this.actions.has(id);
   }
 
-  list(): ActionManifest[] {
-    return Array.from(this.map.values()).map(({ meta }) => ({
-      id: meta.id,
-      description: meta.description,
-      hasInput: !!meta.input,
-      inputSchema: meta.input
-        ? (zodToJsonSchema(meta.input, { target: 'openApi3' }) as Record<string, unknown>)
-        : undefined,
-    }));
-  }
-
-  clear(): void {
-    this.map.clear();
+  size(): number {
+    return this.actions.size;
   }
 }

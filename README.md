@@ -1,64 +1,64 @@
-# Act SDK JS
+# Act SDK
 
-Monorepo for the JavaScript Act SDK:
+Act SDK is an open source alternative to [Crow](https://usecrow.org) for building chat-controlled React apps.
 
-- `@act-sdk/core`: action registry + config helpers.
-- `@act-sdk/react`: React provider and `useAct` hook.
-- `@act-sdk/cli`: CLI for `init`, `add`, and `sync`.
-- `apps/demo-next`: working Next.js example app.
+It lets users navigate and operate your app in natural language, while your app stays in control through typed actions and routes.
 
-## Quick Start (Existing App)
+Ask things like:
 
-Initialize Act SDK files and install required packages:
+- "Where do I find billing?"
+- "Update user user@gmail.com to admin"
+- "Open the customer settings page"
 
-```bash
-npx @act-sdk/cli init
+Act SDK maps those requests to the same app behaviors your UI already uses, so the resulting changes happen as if the user had completed them through the interface directly.
+
+## Self-Hosted
+
+Act SDK supports self-hosted deployments and works with all AI SDK-compatible providers.
+
+For self-hosted setups, the React client sends chat requests to:
+
+- `${endpoint}/api/chat/actions`
+
+So if your config uses:
+
+```ts
+defineConfig({
+  mode: 'self-hosted',
+  endpoint: 'https://your-act-server.example.com',
+  description: 'My app actions and routes',
+});
 ```
 
-Skip auto-install if needed:
+your backend should expose:
 
-```bash
-npx @act-sdk/cli init --skip-install
-```
+- `https://your-act-server.example.com/api/chat/actions`
 
-Add the bundled Act command bar:
+That endpoint should return streamed text responses using `streamText` from the AI SDK.
 
-```bash
-npx @act-sdk/cli add command
-```
+Self-hosted docs:
 
-Sync discovered actions to your backend endpoint:
+- https://act-sdk.dev/docs/self-hosted
 
-```bash
-npx @act-sdk/cli sync
-```
+## How It Works
 
-## Clone This Repository
+You register two things:
 
-```bash
-git clone https://github.com/act-sdk/act-sdk-js
-cd act-sdk-js
-pnpm install
-```
+- `actions` for app mutations or tasks
+- `routes` for navigation targets
 
-## Local Development
+Then your app exposes those capabilities to chat in a typed way.
 
-```bash
-pnpm typecheck
-pnpm build
-pnpm dev
-```
+The model only sees the definitions your app exposes plus the system instructions you provide on your backend.
 
-Workspace scripts:
+Write explicit system instructions so the assistant knows:
 
-- `pnpm dev`: run all package/app dev tasks via Turbo.
-- `pnpm build`: build all packages and apps.
-- `pnpm typecheck`: run type-checking across the workspace.
-- `pnpm clean`: clean Turbo outputs.
+- when to navigate
+- when to call actions
+- how cautious it should be
+- what to do when required inputs are missing
 
-## Package Usage
-
-### 1) Define actions with `@act-sdk/core`
+## Example
 
 ```ts
 import { createAct, defineConfig } from '@act-sdk/core';
@@ -66,202 +66,108 @@ import { z } from 'zod';
 
 export const act = createAct();
 
-export const deleteUser = act.action({
-  id: 'delete_user',
-  description: 'Delete a user by email',
+export const updateUserRole = act.action({
+  id: 'updateUserRole',
+  description: 'Update a user role by email',
   input: z.object({
     email: z.string().email(),
+    role: z.enum(['admin', 'member']),
   }),
-})(async ({ email }) => {
-  // Replace with your own deletion logic
-  console.log('Deleting user', email);
+})(async ({ email, role }) => {
+  // Call the same application logic your UI uses.
+  await updateUserInDatabase(email, { role });
+});
+
+export const openBilling = act.route({
+  id: 'openBilling',
+  description: 'Open the billing settings page',
+  path: '/settings/billing',
 });
 
 export const actSdkConfig = defineConfig({
-  apiKey: process.env.NEXT_PUBLIC_ACT_API_KEY!,
-  projectId: 'proj_123',
-  description: 'My application actions',
-  endpoint: 'https://www.act-sdk.dev',
+  mode: 'self-hosted',
+  endpoint: 'https://your-act-server.example.com',
+  description: 'My app actions and routes',
 });
 ```
 
-### 2) Wrap app with `@act-sdk/react`
+If a user says `Update user user@gmail.com to admin`, the assistant can call `updateUserRole` with typed input, and your app performs the same update your normal settings UI would perform.
+
+## React
 
 ```tsx
 'use client';
 
 import { ActProvider } from '@act-sdk/react';
+import { useRouter } from 'next/navigation';
 import { act, actSdkConfig } from './act-sdk.config';
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+
   return (
-    <ActProvider act={act} config={actSdkConfig}>
+    <ActProvider act={act} config={actSdkConfig} onNavigate={({ path }) => router.push(path)}>
       {children}
     </ActProvider>
   );
 }
 ```
 
-### 3) Use the hook in a command bar
+## Backend
 
-```tsx
-'use client';
+For self-hosted setups, your `/api/chat/actions` endpoint should stream responses back to the client.
 
-import { useAct } from '@act-sdk/react';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import { useEffect, useRef, useState } from 'react';
+Use `streamText` from `ai`, and use `manifestToTools()` to turn `act.manifest.json` into the tool definitions your backend exposes to the model.
 
-const EXAMPLE_PROMPTS = [
-  'Delete user [email protected]',
-  'Refund the last payment',
-  'Suspend user [email protected]',
-];
+```ts
+import { streamText } from 'ai';
+import { manifestToTools } from '@act-sdk/core';
+import manifest from './act.manifest.json';
 
-export function ActCommand() {
-  const { messages, send, status } = useAct();
-  const [open, setOpen] = useState(false);
-  const [input, setInput] = useState('');
-  const commandRef = useRef<HTMLDivElement>(null);
-  const loading = status === 'submitted' || status === 'streaming';
-
-  useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((prev) => !prev);
-      }
-    };
-    document.addEventListener('keydown', down);
-    return () => document.removeEventListener('keydown', down);
-  }, []);
-
-  useEffect(() => {
-    if (open) {
-      const inputEl = commandRef.current?.querySelector<HTMLInputElement>('input');
-      setTimeout(() => inputEl?.focus(), 150);
+const tools = manifestToTools(manifest, {
+  onToolCall: async ({ type, id, input, route }) => {
+    if (type === 'action') {
+      return {
+        actionId: id,
+        success: true,
+        payload: input,
+      };
     }
-  }, [open]);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const value = input.trim();
-    if (!value || loading) return;
-    send(value);
-    setInput('');
-  }
+    return {
+      routeId: id,
+      success: true,
+      payload: input,
+      path: route?.path,
+    };
+  },
+});
 
-  function handleSuggestionClick(prompt: string) {
-    if (loading) return;
-    send(prompt);
-  }
+export async function POST(req: Request) {
+  const { messages } = await req.json();
 
-  return (
-    <>
-      {/* Your dialog/shell here if desired */}
-      <div ref={commandRef}>
-        <Command>
-          <form onSubmit={handleSubmit}>
-            <CommandInput
-              value={input}
-              onValueChange={setInput}
-              placeholder="Type what you want to do..."
-              aria-label="Ask in natural language"
-              disabled={loading}
-            />
-          </form>
-          <CommandList>
-            <CommandEmpty>Type what you want to do…</CommandEmpty>
-            <CommandGroup heading="Suggestions">
-              {EXAMPLE_PROMPTS.map((prompt) => (
-                <CommandItem
-                  key={prompt}
-                  onSelect={() => handleSuggestionClick(prompt)}
-                >
-                  <span>{prompt}</span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </div>
-    </>
-  );
+  const result = streamText({
+    model: yourModel,
+    messages,
+    tools,
+  });
+
+  return result.toUIMessageStreamResponse();
 }
 ```
 
-## CLI Usage
-
-Initialize SDK files in an existing app:
+## CLI
 
 ```bash
 npx @act-sdk/cli init
+npx @act-sdk/cli add chat
+npx @act-sdk/cli generate-manifest
 ```
 
-`init` scaffolds `act-sdk.config.ts` and `providers/act-provider.tsx`, then installs:
+`generate-manifest` scans your project for `act.action(...)` and `act.route(...)` definitions and writes `act.manifest.json`.
 
-- `@act-sdk/core`
-- `@act-sdk/react`
-- `zod`
+## Packages
 
-The generated config exports both `act` and `actSdkConfig`, includes `endpoint`, and uses `process.env.NEXT_PUBLIC_ACT_SDK_API_KEY`.
-Define your actions anywhere in your app by importing `act` from `act-sdk.config.ts`.
-
-Add the bundled Agent UI component:
-
-```bash
-npx @act-sdk/cli add agent
-```
-
-Sync discovered actions to your backend endpoint:
-
-```bash
-# requires act-sdk.config.ts or custom --config path
-npx @act-sdk/cli sync
-```
-
-Optional flags:
-
-```bash
-npx @act-sdk/cli sync --config ./act-sdk.config.ts --project .
-```
-
-## Notes
-
-- The `sync` command supports these config styles:
-  - `export default defineConfig({ ... })`
-  - `export const actSdkConfig = defineConfig({ ... })`
-  - `export const config = { ... }`
-- `apiKey` can be a string literal or `process.env.MY_KEY`.
-
-## Release
-
-One-time setup:
-
-```bash
-pnpm add -Dw @changesets/cli
-npm login
-```
-
-Release flow:
-
-```bash
-pnpm changeset
-pnpm version-packages
-pnpm release:dry-run
-pnpm release
-```
-
-Notes:
-
-- Publish from `main` after CI is green.
-- `.changeset/config.json` already ignores `demo-next`.
-- `pnpm changeset` is the step where you pick which packages to bump and whether each one is a `patch`, `minor`, or `major`.
-- `pnpm version-packages` applies the version bump to `package.json`, updates changelogs, and refreshes `pnpm-lock.yaml`.
-- `pnpm release` publishes in dependency order: `@act-sdk/core`, then `@act-sdk/react`, then `@act-sdk/cli`.
+- [packages/core/README.md](/home/kupa/Desktop/projects/act-sdk-js/packages/core/README.md)
+- [packages/react/README.md](/home/kupa/Desktop/projects/act-sdk-js/packages/react/README.md)
+- [packages/cli/README.md](/home/kupa/Desktop/projects/act-sdk-js/packages/cli/README.md)

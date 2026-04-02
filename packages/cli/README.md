@@ -1,133 +1,85 @@
 # @act-sdk/cli
 
-Command-line tools for scaffolding and syncing Act SDK projects.
+CLI tools for setting up and working with Act SDK projects.
 
-## Use Without Installing
+Use this package to:
+
+- scaffold initial Act SDK files
+- add the chat widget UI
+- generate `act.manifest.json`
+- sync discovered actions and routes to Act Cloud
+
+## Run Without Installing
 
 ```bash
 npx @act-sdk/cli init
-```
-
-This only works after `@act-sdk/cli` has been published to npm.
-
-## Local Development
-
-```bash
-pnpm --filter @act-sdk/cli run build
-node packages/cli/dist/index.js init
-```
-
-If you want a global command locally:
-
-```bash
-cd packages/cli
-npm link
-act-sdk init
-```
-
-## Install Globally (Optional)
-
-```bash
-npm install -g @act-sdk/cli
-act-sdk --help
 ```
 
 ## Commands
 
 ### `act-sdk init`
 
-Scaffolds `act-sdk.config.ts` and `providers/act-provider.tsx` into your project and installs required dependencies.
+Scaffolds:
 
-The generated config:
-- exports `act` and `actSdkConfig`
-- includes an explicit `endpoint`
-- uses `process.env.NEXT_PUBLIC_ACT_SDK_API_KEY`
+- `act-sdk.config.ts`
+- `providers/act-provider.tsx`
 
-You can define actions anywhere in your app by importing `act` from `act-sdk.config.ts`.
-The generated provider file imports `act` and `actSdkConfig` and wraps your app with `@act-sdk/react`.
+It also installs the base dependencies for using Act SDK in a React app.
+
+During setup you can choose:
+
+- `Act cloud`
+- `Self-hosted`
+
+If you choose self-hosted, the CLI links you to:
+
+- `https://act-sdk.dev/docs/self-hosted`
+
+Self-hosted supports all AI SDK-compatible providers.
+The React client expects your self-hosted backend at `${endpoint}/api/chat/actions`.
+That endpoint should stream responses with `streamText` from the AI SDK, typically using `manifestToTools(manifest, { onToolCall })` from `@act-sdk/core` to build the `ToolSet` from `act.manifest.json`.
+Your backend should also send clear system instructions, because the model only sees the definitions your app exposes and the instructions you provide.
 
 ```bash
 act-sdk init
 act-sdk init --skip-install
 ```
 
-### `act-sdk add <component>`
+### `act-sdk add chat`
 
-Adds UI components (currently `command` for the Act command bar).
+Adds the bundled chat widget component.
 
 ```bash
-act-sdk add command
+act-sdk add chat
+```
+
+### `act-sdk generate-manifest`
+
+Scans your project for `act.action(...)` and `act.route(...)` definitions and writes `act.manifest.json`.
+
+```bash
+act-sdk generate-manifest
+act-sdk generate-manifest --config ./act-sdk.config.ts --project .
 ```
 
 ### `act-sdk sync`
 
-Extracts action definitions from your project and syncs them to your endpoint.
+Scans your project for `act.action(...)` and `act.route(...)` definitions and syncs them to Act Cloud.
 
 ```bash
 act-sdk sync
 act-sdk sync --config ./act-sdk.config.ts --project .
 ```
 
-## Required Config
+`sync` currently supports cloud mode only.
 
-`act-sdk sync` expects an `act-sdk.config.ts` (or `--config`) containing:
+## Discovery Model
 
-- `apiKey`
-- `projectId`
-- `description`
-- optional `endpoint` (defaults to `https://www.act-sdk.dev`)
+The CLI does not require you to import all action files from `act-sdk.config.ts`.
 
-## Example: wiring the Act command bar
+Instead, it scans the project for supported `act.action(...)` and `act.route(...)` definitions when generating the manifest or syncing.
 
-After running:
+## Related Packages
 
-```bash
-npx @act-sdk/cli init
-npx @act-sdk/cli add command
-```
-
-you’ll have:
-
-- `act-sdk.config.ts` exporting `act` and `actSdkConfig`
-- `providers/act-provider.tsx` exporting `ActSdkProvider`
-- `components/act-sdk/command.tsx` exporting `ActCommand`
-
-Wrap your app once with the provider (for example in a Next.js root layout):
-
-```tsx
-'use client';
-
-import type { ReactNode } from 'react';
-import { ActSdkProvider } from '@/providers/act-provider';
-
-export default function RootLayout({ children }: { children: ReactNode }) {
-  return (
-    <html lang="en">
-      <body>
-        <ActSdkProvider>{children}</ActSdkProvider>
-      </body>
-    </html>
-  );
-}
-```
-
-Then mount the command bar so users can type natural-language intents (e.g. “delete user [email protected]”):
-
-```tsx
-import { ActCommand } from '@/components/act-sdk/command';
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <body>
-        <ActSdkProvider>
-          {children}
-          <ActCommand /> {/* ⌘K / Ctrl+K opens the command bar */}
-        </ActSdkProvider>
-      </body>
-    </html>
-  );
-}
-```
-
-`ActCommand` internally uses `useAct()` from `@act-sdk/react`, so anything a user types (or selects from suggestions) is sent as an intent that can call your typed actions.
+- `@act-sdk/core` for defining actions, routes, and config
+- `@act-sdk/react` for the provider and `useAct()`
