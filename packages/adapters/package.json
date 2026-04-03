@@ -1,0 +1,43 @@
+{
+  "name": "@act-sdk/adapters",
+  "version": "2.0.1",
+  "private": false,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./stdio": {
+      "types": "./dist/stdio/index.d.ts",
+      "import": "./dist/stdio/index.js"
+    },
+    "./nextjs": {
+      "types": "./dist/nextjs/index.d.ts",
+      "import": "./dist/nextjs/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "prepack": "pnpm run build",
+    "dev": "tsup --watch",
+    "typecheck": "pnpm -s tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@act-sdk/core": "workspace:*",
+    "@act-sdk/mcp": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.27.1"
+  },
+  "peerDependencies": {
+    "zod": "^3.25.0 || ^4.0.0"
+  }
+}

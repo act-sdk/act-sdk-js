@@ -1,6 +1,6 @@
 export { createAct } from './act';
-export type { ActInstance } from './act';
+export type { ActSdkInstance } from './act';
 export { defineConfig } from './config';
-export type { ActConfig } from './config';
+export type { ActSdkConfig } from './config';
 export { ActionRegistry } from './registry';
-export type { ActionDef, RegistryEntry } from './types';
+export type { ActionDef, RegistryEntry, ActionContext } from './types';

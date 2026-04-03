@@ -6,20 +6,11 @@ import path from 'path';
 import { execa } from 'execa';
 
 type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun';
-type SetupMode = 'act-cloud' | 'self-hosted';
-
-type InitAnswers = {
-  setupMode: SetupMode;
-  projectId?: string;
-};
+type Framework = 'stdio' | 'nextjs' | 'express' | 'hono';
 
 interface InitOptions {
   skipInstall?: boolean;
 }
-
-const ACT_DASHBOARD_URL = 'https://www.act-sdk.dev/auth';
-const SELF_HOSTED_DOCS_URL = 'https://act-sdk.dev/docs/self-hosted';
-const REQUIRED_DEPENDENCIES = ['@act-sdk/core', '@act-sdk/react', 'zod'];
 
 async function detectPackageManager(cwd: string): Promise<PackageManager> {
   if (await fs.pathExists(path.join(cwd, 'pnpm-lock.yaml'))) return 'pnpm';
@@ -35,9 +26,11 @@ async function detectPackageManager(cwd: string): Promise<PackageManager> {
   return 'npm';
 }
 
-async function installDependencies(cwd: string, deps: string[]): Promise<PackageManager> {
-  const packageManager = await detectPackageManager(cwd);
-
+async function installDependencies(
+  cwd: string,
+  deps: string[],
+  packageManager: PackageManager,
+): Promise<void> {
   if (packageManager === 'pnpm') {
     await execa('pnpm', ['add', ...deps], { cwd, stdio: 'inherit' });
   } else if (packageManager === 'yarn') {
@@ -47,228 +40,200 @@ async function installDependencies(cwd: string, deps: string[]): Promise<Package
   } else {
     await execa('npm', ['install', ...deps], { cwd, stdio: 'inherit' });
   }
-
-  return packageManager;
 }
 
-async function openUrl(url: string): Promise<void> {
-  if (process.platform === 'darwin') {
-    await execa('open', [url], { stdio: 'ignore' });
-  } else if (process.platform === 'win32') {
-    await execa('cmd', ['/c', 'start', '', url], { stdio: 'ignore' });
-  } else {
-    await execa('xdg-open', [url], { stdio: 'ignore' });
-  }
-}
+function getConfigTemplate(framework: Framework): string {
+  return `import { createAct, defineConfig } from '@act-sdk/core';
+import { z } from 'zod';
 
-async function appendEnvEntries(envPath: string, entries: string[]) {
-  const current = (await fs.pathExists(envPath)) ? await fs.readFile(envPath, 'utf-8') : '';
-  const nextEntries = entries.filter((entry) => entry.startsWith('#') || !current.includes(entry.split('=')[0] ?? entry));
+const act = createAct();
 
-  if (nextEntries.length === 0) {
-    if (!(await fs.pathExists(envPath))) {
-      await fs.writeFile(envPath, '');
-    }
-    return;
-  }
+// Example action
+act.action({
+  id: 'greet',
+  description: 'Greet a user',
+  input: z.object({
+    name: z.string().describe('The name of the person to greet'),
+  }),
+  handler: async ({ name }) => {
+    return \`Hello, \${name}!\`;
+  },
+});
 
-  const prefix = current.length > 0 && !current.endsWith('\n') ? '\n' : '';
-  await fs.appendFile(envPath, `${prefix}${nextEntries.join('\n')}\n`);
-}
-
-function generateConfig(answers: InitAnswers) {
-  if (answers.setupMode === 'self-hosted') {
-    return `import { createAct, defineConfig } from "@act-sdk/core"
-
-export const act = createAct()
-
-export const actSdkConfig = defineConfig({
-  mode: "self-hosted",
-  endpoint: "http://localhost:3000",
-  description: "My Act actions",
-})
-`;
-  }
-
-  return `import { createAct, defineConfig } from "@act-sdk/core"
-
-export const act = createAct()
-
-export const actSdkConfig = defineConfig({
-  mode: "cloud",
-  apiKey: process.env.NEXT_PUBLIC_ACT_SDK_API_KEY!,
-  projectId: "${answers.projectId ?? 'proj_'}",
-  description: "My Act actions",
-  endpoint: "https://www.act-sdk.dev",
-})
+export default defineConfig({
+  name: 'my-mcp-server',
+  description: 'My MCP server',
+  version: '1.0.0',
+  act,
+});
 `;
 }
 
-function generateProvider() {
-  return `"use client"
+function getStdioHandlerTemplate(): string {
+  return `import config from './act-sdk.config.js';
+import { createStdioServer } from '@act-sdk/adapters/stdio';
 
-import { ActProvider as ActProviderRoot } from "@act-sdk/react"
-import { act, actSdkConfig } from "../act-sdk.config"
-
-export function ActSdkProvider({ children }: { children: React.ReactNode }) {
-  return (
-    <ActProviderRoot act={act} config={actSdkConfig}>
-      {children}
-    </ActProviderRoot>
-  )
-}
+createStdioServer(config);
 `;
 }
 
-export async function init(options: InitOptions = {}) {
-  console.log(chalk.bold('\n  Act SDK — Setup\n'));
-  console.log(
-    chalk.dim(
-      '  Any React framework is supported, including Next.js, TanStack Start, Vite, Expo, Gatsby, and more.\n',
-    ),
-  );
+function getNextjsHandlerTemplate(): string {
+  return `import config from '@/act-sdk.config';
+import { createNextHandler } from '@act-sdk/adapters/nextjs';
 
-  const initialAnswers = (await prompts([
-    {
-      type: 'select',
-      name: 'setupMode',
-      message: 'How do you want to set up Act?',
-      choices: [
-        {
-          title: 'Act cloud',
-          description: 'Use the default Act dashboard flow for project setup.',
-          value: 'act-cloud',
-        },
-        {
-          title: 'Self-hosted',
-          description: 'Use your own infra and provider. We support all AI SDK-compatible providers.',
-          value: 'self-hosted',
-        },
-      ],
-      initial: 0,
-    },
-  ])) as Pick<InitAnswers, 'setupMode'>;
+// Optional: Add authentication
+// export const { GET, POST, DELETE } = createNextHandler(config, {
+//   auth: async (req) => {
+//     const token = req.headers.get('authorization')?.split(' ')[1];
+//     if (!token) return null;
+//     // Verify token and return user info
+//     return { userId: '123', role: 'admin' };
+//   },
+// });
 
-  if (!initialAnswers.setupMode) {
-    console.log(chalk.yellow('Setup canceled.'));
-    return;
+export const { GET, POST, DELETE } = createNextHandler(config);
+`;
+}
+
+function getFrameworkInstructions(framework: Framework, cwd: string): string {
+  switch (framework) {
+    case 'stdio':
+      return `
+${chalk.green('✓')} STDIO handler created at ${chalk.cyan('src/mcp-server.ts')}
+
+${chalk.bold('Next steps:')}
+1. Add your actions to ${chalk.cyan('act-sdk.config.ts')}
+2. Build and run your server:
+   ${chalk.cyan('npx tsx src/mcp-server.ts')}
+
+3. Configure in Claude Desktop (${chalk.cyan('~/Library/Application Support/Claude/claude_desktop_config.json')}):
+   {
+     "mcpServers": {
+       "my-mcp-server": {
+         "command": "npx",
+         "args": ["tsx", "${path.join(cwd, 'src/mcp-server.ts')}"]
+       }
+     }
+   }
+`;
+
+    case 'nextjs':
+      return `
+${chalk.green('✓')} Next.js handler created at ${chalk.cyan('app/api/mcp/route.ts')}
+
+${chalk.bold('Next steps:')}
+1. Add your actions to ${chalk.cyan('act-sdk.config.ts')}
+2. Start your Next.js dev server:
+   ${chalk.cyan('npm run dev')}
+
+3. Your MCP endpoint will be available at:
+   ${chalk.cyan('http://localhost:3000/api/mcp')}
+
+4. Configure in Claude Desktop:
+   {
+     "mcpServers": {
+       "my-mcp-server": {
+         "command": "npx",
+         "args": ["-y", "@modelcontextprotocol/inspector", "http://localhost:3000/api/mcp"]
+       }
+     }
+   }
+`;
+
+    case 'express':
+    case 'hono':
+      return `
+${chalk.yellow('⚠')} ${framework.toUpperCase()} adapter is coming soon!
+
+For now, you can:
+1. Use ${chalk.cyan('STDIO')} or ${chalk.cyan('Next.js')} adapters
+2. Check back later for ${framework} support
+
+${chalk.bold('Config file created:')} ${chalk.cyan('act-sdk.config.ts')}
+`;
+
+    default:
+      return '';
   }
+}
 
-  const dashboardMessage =
-    initialAnswers.setupMode === 'self-hosted'
-      ? 'Open the self-hosted docs to continue setup?'
-      : 'Open the Act dashboard in your browser to log in and grab your Project ID & API key?';
-
-  const { openDashboards } = await prompts({
-    type: 'confirm',
-    name: 'openDashboards',
-    message: dashboardMessage,
-    initial: true,
-  });
-
-  if (openDashboards) {
-    if (initialAnswers.setupMode === 'self-hosted') {
-      console.log(
-        chalk.dim(
-          `\n  Self-hosted setup supports all AI SDK-compatible providers.\n  Continue here: ${chalk.cyan(
-            SELF_HOSTED_DOCS_URL,
-          )}\n`,
-        ),
-      );
-    } else {
-      console.log(chalk.dim(`\n  Open this page:\n  Act dashboard: ${chalk.cyan(ACT_DASHBOARD_URL)}\n`));
-    }
-
-    try {
-      await openUrl(
-        initialAnswers.setupMode === 'self-hosted' ? SELF_HOSTED_DOCS_URL : ACT_DASHBOARD_URL,
-      );
-    } catch {
-      // ignore failures, user still has the URLs printed above
-    }
-  }
-
-  const answers = (await prompts([
-    {
-      type: initialAnswers.setupMode === 'act-cloud' ? 'text' : null,
-      name: 'projectId',
-      message: 'Project ID (from your Act dashboard):',
-      initial: 'proj_',
-    },
-  ])) as Pick<InitAnswers, 'projectId'>;
-
-  if (initialAnswers.setupMode === 'act-cloud' && !answers.projectId) {
-    console.log(chalk.yellow('Setup canceled.'));
-    return;
-  }
-
-  const fullAnswers: InitAnswers = {
-    setupMode: initialAnswers.setupMode,
-    projectId: answers.projectId,
-  };
-
-  const spinner = ora('Initializing Act SDK...').start();
+export async function init(options: InitOptions): Promise<void> {
   const cwd = process.cwd();
-  const envEntries =
-    initialAnswers.setupMode === 'act-cloud'
-      ? ['NEXT_PUBLIC_ACT_SDK_API_KEY=your_act_sdk_api_key_here']
-      : [];
-  const installDeps = [...REQUIRED_DEPENDENCIES];
 
-  try {
-    await fs.outputFile(path.join(cwd, 'act-sdk.config.ts'), generateConfig(fullAnswers));
-    await fs.outputFile(path.join(cwd, 'providers/act-provider.tsx'), generateProvider());
+  console.log(chalk.bold('\n🚀 Act-SDK Initialization\n'));
 
-    await appendEnvEntries(path.join(cwd, '.env'), envEntries);
-
-    let packageManager: PackageManager | null = null;
-
-    if (!options.skipInstall) {
-      spinner.text = 'Installing dependencies...';
-      packageManager = await installDependencies(cwd, installDeps);
-    }
-
-    spinner.succeed('Act SDK initialized successfully!');
-
-    console.log(chalk.dim('\n  Next steps:\n'));
-    const nextSteps = [
-    ];
-
-    if (initialAnswers.setupMode === 'act-cloud') {
-      nextSteps.unshift(
-        `Add your Act key as ${chalk.cyan('NEXT_PUBLIC_ACT_SDK_API_KEY')} in ${chalk.cyan('.env')}`,
-      );
-    }
-
-    if (initialAnswers.setupMode === 'self-hosted') {
-      nextSteps.push(
-        `Self-hosted supports all AI SDK-compatible providers. Continue setup at ${chalk.cyan(
-          SELF_HOSTED_DOCS_URL,
-        )}`,
-      );
-      nextSteps.push(`Update ${chalk.cyan('act-sdk.config.ts')} with your self-hosted endpoint`);
-    }
-
-    nextSteps.push(
-      `Define your actions and routes anywhere in your app and import ${chalk.cyan('act')} from ${chalk.cyan('act-sdk.config.ts')}`,
-    );
-    nextSteps.push(`Wrap your app with ${chalk.cyan('providers/act-provider.tsx')}`);
-
-    if (options.skipInstall) {
-      nextSteps.push(`Install dependencies: ${chalk.cyan(`pnpm add ${installDeps.join(' ')}`)}`);
-    } else {
-      nextSteps.push(`Dependencies installed with ${chalk.cyan(packageManager ?? 'npm')}`);
-    }
-
-    nextSteps.push(`Run ${chalk.cyan('npx @act-sdk/cli add chat')} to add the chat widget`);
-
-    nextSteps.forEach((step, index) => {
-      console.log(`  ${index + 1}. ${step}`);
+  // Check if already initialized
+  const configPath = path.join(cwd, 'act-sdk.config.ts');
+  if (await fs.pathExists(configPath)) {
+    console.log(chalk.yellow('⚠ act-sdk.config.ts already exists!'));
+    const { overwrite } = await prompts({
+      type: 'confirm',
+      name: 'overwrite',
+      message: 'Overwrite existing configuration?',
+      initial: false,
     });
 
-    console.log(chalk.green('\n  Happy hacking. Let users control your app through chat.\n'));
+    if (!overwrite) {
+      console.log(chalk.gray('Cancelled.'));
+      return;
+    }
+  }
+
+  // Prompt for framework
+  const { framework } = await prompts({
+    type: 'select',
+    name: 'framework',
+    message: 'Choose your framework:',
+    choices: [
+      { title: 'STDIO (Command-line)', value: 'stdio' },
+      { title: 'Next.js', value: 'nextjs' },
+      { title: 'Express (Coming Soon)', value: 'express', disabled: true },
+      { title: 'Hono (Coming Soon)', value: 'hono', disabled: true },
+    ],
+    initial: 0,
+  });
+
+  if (!framework) {
+    console.log(chalk.gray('Cancelled.'));
+    return;
+  }
+
+  const spinner = ora('Creating configuration...').start();
+
+  try {
+    // Create act-sdk.config.ts
+    await fs.writeFile(configPath, getConfigTemplate(framework));
+    spinner.succeed('Configuration created');
+
+    // Create handler file based on framework
+    if (framework === 'stdio') {
+      const handlerPath = path.join(cwd, 'src', 'mcp-server.ts');
+      await fs.ensureDir(path.dirname(handlerPath));
+      await fs.writeFile(handlerPath, getStdioHandlerTemplate());
+      spinner.succeed('STDIO handler created');
+    } else if (framework === 'nextjs') {
+      const handlerPath = path.join(cwd, 'app', 'api', 'mcp', 'route.ts');
+      await fs.ensureDir(path.dirname(handlerPath));
+      await fs.writeFile(handlerPath, getNextjsHandlerTemplate());
+      spinner.succeed('Next.js handler created');
+    }
+
+    // Install dependencies
+    if (!options.skipInstall) {
+      const packageManager = await detectPackageManager(cwd);
+      spinner.start('Installing dependencies...');
+
+      const baseDeps = ['@act-sdk/core', 'zod'];
+      const adapterDeps =
+        framework === 'stdio' || framework === 'nextjs' ? ['@act-sdk/adapters'] : [];
+
+      await installDependencies(cwd, [...baseDeps, ...adapterDeps], packageManager);
+      spinner.succeed('Dependencies installed');
+    }
+
+    console.log(getFrameworkInstructions(framework, cwd));
   } catch (error) {
-    spinner.fail(chalk.red('Act SDK setup failed'));
+    spinner.fail('Failed to initialize');
     console.error(chalk.red(error instanceof Error ? error.message : 'Unknown error'));
     process.exit(1);
   }

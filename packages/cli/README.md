@@ -1,85 +1,93 @@
 # @act-sdk/cli
 
-CLI tools for setting up and working with Act SDK projects.
+CLI tool for initializing Act SDK projects and scaffolding MCP servers.
 
-Use this package to:
-
-- scaffold initial Act SDK files
-- add the chat widget UI
-- generate `act.manifest.json`
-- sync discovered actions and routes to Act Cloud
-
-## Run Without Installing
+## Installation
 
 ```bash
+npm install -g @act-sdk/cli
+# or
 npx @act-sdk/cli init
 ```
 
-## Commands
+## Usage
 
-### `act-sdk init`
-
-Scaffolds:
-
-- `act-sdk.config.ts`
-- `providers/act-provider.tsx`
-
-It also installs the base dependencies for using Act SDK in a React app.
-
-During setup you can choose:
-
-- `Act cloud`
-- `Self-hosted`
-
-If you choose self-hosted, the CLI links you to:
-
-- `https://act-sdk.dev/docs/self-hosted`
-
-Self-hosted supports all AI SDK-compatible providers.
-The React client expects your self-hosted backend at `${endpoint}/api/chat/actions`.
-That endpoint should stream responses with `streamText` from the AI SDK, typically using `manifestToTools(manifest, { onToolCall })` from `@act-sdk/core` to build the `ToolSet` from `act.manifest.json`.
-Your backend should also send clear system instructions, because the model only sees the definitions your app exposes and the instructions you provide.
+### Initialize a new project
 
 ```bash
 act-sdk init
+```
+
+This will:
+1. Create an `act-sdk.config.ts` file in your project root
+2. Scaffold the MCP handler for your chosen framework
+3. Install required dependencies
+
+### Framework Options
+
+- **STDIO** - Command-line MCP server (ready)
+- **Next.js** - Next.js API route handler (ready)
+- **Express** - Express.js handler (coming soon)
+- **Hono** - Hono framework handler (coming soon)
+
+## Examples
+
+### STDIO Server
+
+After running `act-sdk init` and selecting STDIO:
+
+1. Edit `act-sdk.config.ts` to add your actions
+2. Run: `npx tsx src/mcp-server.ts`
+3. Configure in Claude Desktop
+
+### Next.js Server
+
+After running `act-sdk init` and selecting Next.js:
+
+1. Edit `act-sdk.config.ts` to add your actions
+2. Your handler is at `app/api/mcp/route.ts`
+3. Run: `npm run dev`
+4. MCP endpoint: `http://localhost:3000/api/mcp`
+
+## Configuration
+
+The generated `act-sdk.config.ts` includes an example action:
+
+```typescript
+import { createAct, defineConfig } from '@act-sdk/core';
+import { z } from 'zod';
+
+const act = createAct();
+
+act.action({
+  id: 'greet',
+  description: 'Greet a user',
+  input: z.object({
+    name: z.string().describe('The name of the person to greet'),
+  }),
+  handler: async ({ name }) => {
+    return `Hello, ${name}!`;
+  },
+});
+
+export default defineConfig({
+  name: 'my-mcp-server',
+  description: 'My MCP server',
+  version: '1.0.0',
+  act,
+});
+```
+
+## Options
+
+### `--skip-install`
+
+Skip automatic dependency installation:
+
+```bash
 act-sdk init --skip-install
 ```
 
-### `act-sdk add chat`
+## License
 
-Adds the bundled chat widget component.
-
-```bash
-act-sdk add chat
-```
-
-### `act-sdk generate-manifest`
-
-Scans your project for `act.action(...)` and `act.route(...)` definitions and writes `act.manifest.json`.
-
-```bash
-act-sdk generate-manifest
-act-sdk generate-manifest --config ./act-sdk.config.ts --project .
-```
-
-### `act-sdk sync`
-
-Scans your project for `act.action(...)` and `act.route(...)` definitions and syncs them to Act Cloud.
-
-```bash
-act-sdk sync
-act-sdk sync --config ./act-sdk.config.ts --project .
-```
-
-`sync` currently supports cloud mode only.
-
-## Discovery Model
-
-The CLI does not require you to import all action files from `act-sdk.config.ts`.
-
-Instead, it scans the project for supported `act.action(...)` and `act.route(...)` definitions when generating the manifest or syncing.
-
-## Related Packages
-
-- `@act-sdk/core` for defining actions, routes, and config
-- `@act-sdk/react` for the provider and `useAct()`
+MIT

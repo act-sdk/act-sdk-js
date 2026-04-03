@@ -1,12 +1,12 @@
-import { type ActInstance } from './act';
+import type { ActSdkInstance } from './act';
 
-export interface ActConfig {
+export interface ActSdkConfig {
   name: string;
   description?: string;
   version?: string;
-  act: ActInstance;
+  act: ActSdkInstance;
 }
 
-export function defineConfig(config: ActConfig): ActConfig {
+export function defineConfig(config: ActSdkConfig): ActSdkConfig {
   return config;
 }

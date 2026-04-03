@@ -19,4 +19,4 @@ export function createAct() {
   };
 }
 
-export type ActInstance = ReturnType<typeof createAct>;
+export type ActSdkInstance = ReturnType<typeof createAct>;

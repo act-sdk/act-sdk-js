@@ -1,125 +1,147 @@
 # @act-sdk/core
 
-Simple action registry for building extensible applications.
+Action registry for building MCP-ready apps.
 
-## Overview
+## What is this?
 
-`@act-sdk/core` provides a lightweight registry pattern for defining and executing actions with type-safe input validation using Zod schemas.
+The core registry that lets you define actions with type-safe inputs. Actions can be called directly in your app OR exposed as MCP tools. Your existing functions become both internal logic and AI-accessible tools.
 
-## Install
+## Installation
 
 ```bash
 npm install @act-sdk/core zod
 ```
 
-Supports Zod v3.25+ and Zod v4.
+Works with Zod v3.25+ and v4.
 
-## Example
+## Quick Start
 
-```ts
-import { createAct } from '@act-sdk/core';
+```typescript
+import { createAct, defineConfig } from '@act-sdk/core';
 import { z } from 'zod';
 
-const act = createAct();
+// 1. Create action registry
+export const act = createAct();
 
-// Register an action
-act.action(
-  {
-    id: 'updateUserRole',
-    description: 'Update a user role by email',
-    input: z.object({
-      email: z.string().email(),
-      role: z.enum(['admin', 'member']),
-    }),
+// 2. Register actions — returns the handler function
+export const getDoughnuts = act.action({
+  id: 'getDoughnuts',
+  description: 'Get doughnuts for a user',
+  input: z.object({
+    userId: z.string(),
+    limit: z.number().optional(),
+  }),
+  handler: async ({ userId, limit }) => {
+    return db.doughnuts.findMany({ 
+      where: { userId }, 
+      take: limit ?? 10 
+    });
   },
-  async ({ email, role }) => {
-    await updateUserInDatabase(email, { role });
-    return { success: true };
-  }
-);
-
-// Execute an action
-await act.run('updateUserRole', {
-  email: 'user@example.com',
-  role: 'admin',
 });
 
-// List all registered actions
-const actions = act.list();
-console.log(actions); // [{ id: 'updateUserRole', description: '...', ... }]
+// 3. Use directly in your app
+await getDoughnuts({ userId: '123', limit: 5 });
 
-// Check if an action exists
-if (act.has('updateUserRole')) {
-  // ...
-}
+// 4. Export config for MCP adapters
+export default defineConfig({
+  name: 'my-app',
+  description: 'My app MCP server',
+  version: '1.0.0',
+  act,
+});
 ```
 
 ## API
 
 ### `createAct()`
 
-Creates a new Act SDK instance with an action registry.
+Creates an action registry.
 
-**Returns:** `ActSdkInstance` with the following methods:
+```typescript
+const act = createAct();
+```
 
-#### `action(meta, handler)`
+### `act.action(def)`
 
-Register a new action.
+Register an action. **Returns the handler function** so you can call it directly.
 
-- `meta`: Action metadata including `id`, `description`, and optional `input` schema
-- `handler`: Async function that receives validated input and returns a result
+```typescript
+export const myAction = act.action({
+  id: 'myAction',
+  description: 'Does something',
+  input: z.object({ name: z.string() }),  // optional
+  handler: async ({ name }, context) => {
+    // context.authInfo available when called via MCP with auth
+    return `Hello, ${name}!`;
+  },
+});
 
-**Returns:** Object with `id` and `meta`
+// Call it directly
+await myAction({ name: 'Alice' });
+```
 
-#### `run(actionId, payload)`
+### `act.getRegistry()`
 
-Execute a registered action by ID with the given payload.
+Access the internal registry.
 
-- `actionId`: The ID of the action to execute
-- `payload`: Input data (will be validated against the action's input schema)
+```typescript
+const registry = act.getRegistry();
 
-**Returns:** Promise resolving to the action's return value
+registry.all();      // Get all registered actions
+registry.get(id);    // Get specific action by ID
+registry.has(id);    // Check if action exists
+registry.size();     // Number of registered actions
+```
 
-#### `list()`
+### `defineConfig(config)`
 
-List all registered actions with their manifests.
+Create a config object for MCP adapters.
 
-**Returns:** Array of `ActionManifest` objects
-
-#### `has(actionId)`
-
-Check if an action is registered.
-
-- `actionId`: The ID to check
-
-**Returns:** Boolean
-
-#### `clear()`
-
-Clear all registered actions.
+```typescript
+export default defineConfig({
+  name: 'my-app',
+  description: 'My app description',
+  version: '1.0.0',
+  act,
+});
+```
 
 ## Type Safety
 
-The SDK provides full TypeScript support with type inference from Zod schemas:
+Full TypeScript support with automatic inference:
 
-```ts
-const greetAction = act.action(
-  {
-    id: 'greet',
-    description: 'Greet a user',
-    input: z.object({
-      name: z.string(),
-    }),
+```typescript
+const calculate = act.action({
+  id: 'calculate',
+  input: z.object({
+    amount: z.number(),
+    tax: z.number(),
+  }),
+  handler: async ({ amount, tax }) => {
+    // amount and tax are typed as number
+    return amount + (amount * tax);
   },
-  async ({ name }) => {
-    // `name` is typed as string
-    return `Hello, ${name}!`;
-  }
-);
+});
+```
+
+## Authentication Context
+
+When actions are called via MCP adapters with auth, they receive context:
+
+```typescript
+act.action({
+  id: 'getProfile',
+  description: 'Get user profile',
+  handler: async (args, context) => {
+    // context.authInfo contains auth data from adapter
+    const userId = context?.authInfo?.userId;
+    return db.users.findOne({ id: userId });
+  },
+});
 ```
 
 ## Related Packages
 
-- `@act-sdk/mcp` - Convert actions to MCP tools
-- `@act-sdk/cli` - CLI for development and tooling
+- **@act-sdk/mcp** - Convert actions to MCP server
+- **@act-sdk/adapters** - STDIO and Next.js adapters
 

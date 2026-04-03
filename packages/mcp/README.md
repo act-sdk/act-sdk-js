@@ -1,57 +1,89 @@
 # @act-sdk/mcp
 
-MCP (Model Context Protocol) adapter for Act SDK.
+Translate Act SDK actions into MCP tools.
 
-## Overview
+## What is this?
 
-This package provides utilities to convert Act SDK actions into MCP tools, enabling seamless integration with MCP-compatible systems.
+Converts your Act SDK action registry into an MCP server. Usually used via adapters, not directly.
 
 ## Installation
 
 ```bash
-pnpm add @act-sdk/mcp @act-sdk/core
+npm install @act-sdk/mcp @act-sdk/core
 ```
 
 ## Usage
 
 ```typescript
-import { createAct } from '@act-sdk/core';
-import { actToMcp } from '@act-sdk/mcp';
-import { z } from 'zod';
+import { createServer, registerTools } from '@act-sdk/mcp';
+import config from './act-sdk.config';
 
-// Create and register actions
-const act = createAct();
+// Create MCP server from config
+const server = createServer(config);
 
-act.action(
-  {
-    id: 'greet',
-    description: 'Greet a user',
-    input: z.object({
-      name: z.string(),
-    }),
-  },
-  async ({ name }) => {
-    return `Hello, ${name}!`;
-  }
-);
+// Or register tools on existing server
+const server = new McpServer({ 
+  name: 'my-app', 
+  description: 'My server' 
+});
+registerTools(server, config);
+```
 
-// Convert to MCP
-const mcp = actToMcp(act);
+## With Authentication Context
 
-// Use MCP tools
-console.log(mcp.tools); // List of MCP tool definitions
-await mcp.callTool('greet', { name: 'World' }); // Call a tool
+Pass auth context to all tool handlers:
+
+```typescript
+import { createServer } from '@act-sdk/mcp';
+
+// Static context
+const server = createServer(config, { 
+  authInfo: { userId: '123' } 
+});
+
+// Dynamic context (called per request)
+const server = createServer(config, () => ({ 
+  authInfo: getCurrentUser() 
+}));
 ```
 
 ## API
 
-### `actToMcp(actInstance: ActSdkInstance)`
+### `createServer(config, contextOrProvider?)`
 
-Converts an Act SDK instance to an MCP adapter.
+Create an MCP server from your Act SDK config.
 
-**Returns:** `McpAdapter` with:
-- `tools`: Array of MCP tool definitions
-- `callTool(name: string, args: unknown)`: Function to execute a tool
+**Parameters:**
+- `config` - ActSdkConfig with your action registry
+- `contextOrProvider` - Optional auth context or provider function
+
+**Returns:** `McpServer` instance
+
+### `registerTools(server, config, contextOrProvider?)`
+
+Register actions as MCP tools on an existing server.
+
+**Parameters:**
+- `server` - Existing MCP server instance
+- `config` - ActSdkConfig with your action registry
+- `contextOrProvider` - Optional auth context or provider function
+
+## How It Works
+
+Each registered action becomes an MCP tool:
+- Action `id` → tool name
+- Action `description` → tool description
+- Action `input` schema → tool input schema
+- Validates input with Zod before calling handler
+- Passes context to handler for auth/request data
+
+## Direct Usage Not Recommended
+
+Most users should use **@act-sdk/adapters** instead:
+- `@act-sdk/adapters/stdio` - For CLI tools
+- `@act-sdk/adapters/nextjs` - For Next.js apps
+
+These adapters call `createServer()` internally with proper transport setup.
 
 ## License
 

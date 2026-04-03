@@ -1,0 +1,18 @@
+{
+  "name": "act-sdk-test-demo",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "stdio": "tsx stdio-server.ts",
+    "test": "tsx test.ts"
+  },
+  "dependencies": {
+    "@act-sdk/core": "workspace:*",
+    "@act-sdk/mcp": "workspace:*",
+    "@act-sdk/adapters": "workspace:*",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}

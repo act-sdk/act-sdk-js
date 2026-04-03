@@ -1,2 +1,1 @@
-export { createMcpServer, startMcpServer } from './adapter';
-export type { McpServer, McpServerOptions } from './adapter';
+export { createServer, registerTools, type ServerContext, type ContextProvider } from './mcp.js';
