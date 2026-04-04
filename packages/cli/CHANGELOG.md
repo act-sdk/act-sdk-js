@@ -1,5 +1,17 @@
 # @act-sdk/cli
 
+## 3.0.1
+
+### Patch Changes
+
+- fix the trasnport issue in nextjs adapter
+
+## 3.0.0
+
+### Major Changes
+
+- this release is the initial release for mcp support and migration from react support
+
 ## 2.0.1
 
 ### Patch Changes

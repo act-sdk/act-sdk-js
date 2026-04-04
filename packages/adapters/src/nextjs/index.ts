@@ -14,11 +14,9 @@ export function createNextHandler<TAuth extends AuthContext = AuthContext>(
   config: ActSdkConfig,
   options: NextHandlerOptions<TAuth> = {},
 ) {
-  let currentAuthInfo: TAuth | undefined;
-
-  const server = createServer(config, () => ({ authInfo: currentAuthInfo }));
-
   const handleRequest = async (req: Request): Promise<Response> => {
+    let authInfo: TAuth | undefined;
+
     if (options.auth) {
       const result = await options.auth(req);
       if (!result) {
@@ -30,10 +28,10 @@ export function createNextHandler<TAuth extends AuthContext = AuthContext>(
           { status: 401 },
         );
       }
-      currentAuthInfo = result;
-    } else {
-      currentAuthInfo = undefined;
+      authInfo = result;
     }
+
+    const server = createServer(config, { authInfo });
 
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
