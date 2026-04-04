@@ -1,6 +1,6 @@
 # Act SDK
 
-**The fastest way to add MCP to your existing TypeScript app.**
+**The fastest way to add MCP to TypeScript apps.**
 
 Act SDK is the simplest way to bring MCP into your application. It gives you everything you need to go from existing logic to a working MCP server in minutes. Expose existing functions as tools, integrate with frameworks like Next.js, Express, Hono, etc., and ship without building servers from scratch.
 
