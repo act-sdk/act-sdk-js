@@ -1,6 +1,6 @@
 # @act-sdk/adapters
 
-MCP adapters for STDIO and Next.js.
+MCP adapters for STDIO, Next.js, Express, and Hono.
 
 ## What is this?
 
@@ -103,6 +103,70 @@ export const getProfile = act.action({
 });
 ```
 
+## Express Adapter
+
+For Express applications on Node.js.
+
+```bash
+npm install @act-sdk/adapters express
+```
+
+```typescript
+import express from 'express';
+import { createExpressHandler } from '@act-sdk/adapters/express';
+import config from './act-sdk.config.js';
+
+const app = express();
+
+app.use(
+  '/mcp',
+  createExpressHandler(config, {
+    auth: async (req) => {
+      const token = req.headers.authorization?.split(' ')[1];
+      if (!token) return null;
+      return verifyJWT(token);
+    },
+  }),
+);
+
+app.listen(3000);
+```
+
+**When to use:** Existing Express APIs that need MCP over Streamable HTTP.
+
+**Note:** Mount MCP before `express.json()` on the same path so the request body stream stays available for MCP POST payloads.
+
+## Hono Adapter
+
+For Hono on Node.js, Bun, or Cloudflare Workers.
+
+```bash
+npm install @act-sdk/adapters hono
+```
+
+```typescript
+import { Hono } from 'hono';
+import { createHonoHandler } from '@act-sdk/adapters/hono';
+import config from './act-sdk.config.js';
+
+const app = new Hono();
+
+app.use(
+  '/mcp/*',
+  createHonoHandler(config, {
+    auth: async (c) => {
+      const token = c.req.header('authorization')?.split(' ')[1];
+      if (!token) return null;
+      return verifyJWT(token);
+    },
+  }),
+);
+
+export default app;
+```
+
+**When to use:** Edge or lightweight HTTP servers with Hono's Web Standard `Request` API.
+
 ## API
 
 ### `createStdioServer(config, options?)`
@@ -125,9 +189,29 @@ Creates Next.js route handlers.
 
 **Returns:** `{ GET, POST, DELETE }` route handlers
 
+### `createExpressHandler(config, options?)`
+
+Creates Express middleware for GET, POST, and DELETE MCP requests.
+
+**Parameters:**
+- `config` - Your Act SDK config
+- `options.auth?` - Auth function `(req) => Promise<AuthContext | null>`
+
+**Returns:** Express middleware `(req, res, next)`
+
+### `createHonoHandler(config, options?)`
+
+Creates Hono middleware for MCP on `/mcp/*` (or your chosen route).
+
+**Parameters:**
+- `config` - Your Act SDK config
+- `options.auth?` - Auth function `(c) => Promise<AuthContext | null>`
+
+**Returns:** Hono handler returning a `Response`
+
 ## Coming Soon
 
-Express, Hono, and Fastify adapters are on the roadmap.
+Fastify adapter is on the roadmap.
 
 ## License
 

@@ -18,6 +18,14 @@
     "./nextjs": {
       "types": "./dist/nextjs/index.d.ts",
       "import": "./dist/nextjs/index.js"
+    },
+    "./express": {
+      "types": "./dist/express/index.d.ts",
+      "import": "./dist/express/index.js"
+    },
+    "./hono": {
+      "types": "./dist/hono/index.d.ts",
+      "import": "./dist/hono/index.js"
     }
   },
   "files": [
@@ -30,7 +38,8 @@
     "build": "tsup",
     "prepack": "pnpm run build",
     "dev": "tsup --watch",
-    "typecheck": "pnpm -s tsc --noEmit -p tsconfig.json"
+    "typecheck": "pnpm -s tsc --noEmit -p tsconfig.json",
+    "test": "pnpm --filter @act-sdk/core build && pnpm run build && node --test test/**/*.test.mjs"
   },
   "dependencies": {
     "@act-sdk/core": "workspace:*",
@@ -38,6 +47,21 @@
     "@modelcontextprotocol/sdk": "^1.27.1"
   },
   "peerDependencies": {
+    "express": "^4.21.0 || ^5.0.0",
+    "hono": "^4.0.0",
     "zod": "^3.25.0 || ^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    },
+    "hono": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "express": "^5.1.0",
+    "hono": "^4.7.0"
   }
 }
